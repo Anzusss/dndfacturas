@@ -27,25 +27,25 @@ export const ZoomControls = ({
   toggleGridLines,
 }) => {
   return (
-    <div className="flex items-center space-x-2 bg-slate-800/80 p-1 rounded-lg border border-slate-700/60 select-none">
+    <div className="flex items-center space-x-2 bg-neutral-100 p-1 rounded-lg border border-neutral-200 select-none">
       {/* Reducir zoom (Mínimo 50%) */}
       <button
         onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-        className="p-1.5 hover:bg-slate-700 rounded text-slate-300 hover:text-white transition"
+        className="p-1.5 hover:bg-neutral-200 rounded text-neutral-600 hover:text-neutral-900 transition"
         title="Reducir zoom"
       >
         <ZoomOut className="w-4 h-4" />
       </button>
 
       {/* Porcentaje actual */}
-      <span className="text-xs font-mono w-12 text-center text-slate-200">
+      <span className="text-xs font-mono w-12 text-center text-neutral-700">
         {Math.round(zoom * 100)}%
       </span>
 
       {/* Aumentar zoom (Máximo 180%) */}
       <button
         onClick={() => setZoom(Math.min(1.8, zoom + 0.1))}
-        className="p-1.5 hover:bg-slate-700 rounded text-slate-300 hover:text-white transition"
+        className="p-1.5 hover:bg-neutral-200 rounded text-neutral-600 hover:text-neutral-900 transition"
         title="Aumentar zoom"
       >
         <ZoomIn className="w-4 h-4" />
@@ -54,21 +54,21 @@ export const ZoomControls = ({
       {/* Restablecer zoom al 100% */}
       <button
         onClick={() => setZoom(1)}
-        className="p-1.5 hover:bg-slate-700 rounded text-slate-300 hover:text-white transition"
+        className="p-1.5 hover:bg-neutral-200 rounded text-neutral-600 hover:text-neutral-900 transition"
         title="Zoom 100%"
       >
         <RotateCcw className="w-3.5 h-3.5" />
       </button>
 
-      <div className="w-[1px] h-4 bg-slate-700 mx-1" />
+      <div className="w-[1px] h-4 bg-neutral-300 mx-1" />
 
       {/* Toggle de guías de margen físico */}
       <button
         onClick={toggleGridLines}
         className={`px-2.5 py-1 text-xs rounded flex items-center gap-1.5 transition ${
           showGridLines
-            ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/40'
-            : 'text-slate-400 hover:bg-slate-700 hover:text-white'
+            ? 'bg-primary-100 text-primary-700 border border-primary-200'
+            : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-900'
         }`}
         title="Mostrar/Ocultar guías de margen físico"
       >
@@ -81,8 +81,8 @@ export const ZoomControls = ({
         onClick={() => setPreviewMode(!previewMode)}
         className={`px-2.5 py-1 text-xs rounded font-medium flex items-center gap-1.5 transition ${
           previewMode
-            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-            : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+            ? 'bg-warning-100 text-warning-700 border border-warning-200'
+            : 'text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900'
         }`}
         title="Alternar entre modo edición y vista previa exacta"
       >

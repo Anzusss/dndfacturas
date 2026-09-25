@@ -25,18 +25,8 @@ export const GridBlock = ({ element, previewMode }) => {
 
   return (
     <div className="w-full h-full p-1.5 flex flex-col justify-start text-[12px] text-black">
-      {/* Encabezado contextual: siempre en el DOM para preservar el espacio del layout.
-          Solo se oculta visualmente en previewMode con visibility:hidden. */}
-      <div
-        className={`block-editor-label text-[10px] uppercase font-bold border-b border-dashed pb-0.5 mb-1.5 flex justify-between ${
-          previewMode
-            ? 'invisible border-transparent'
-            : 'text-slate-400 border-slate-300'
-        }`}
-      >
-        <span>{element.title}</span>
-        <span className="font-mono text-[9px]">GRID</span>
-      </div>
+
+
 
       {/* Cuadrícula de 2 columnas: [Etiqueta en negrita, Valor dinámico] */}
       <div

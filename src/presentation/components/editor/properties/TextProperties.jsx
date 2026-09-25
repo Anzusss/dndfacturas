@@ -12,14 +12,14 @@ import React from 'react';
 export const TextProperties = ({ selectedElement, updateElement }) => {
   return (
     <div>
-      <label className="text-[11px] font-medium text-slate-400 block mb-1">
+      <label className="text-[11px] font-medium text-muted block mb-1">
         Contenido de Texto
       </label>
       <textarea
         rows={4}
         value={selectedElement.content || ''}
         onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
-        className="w-full bg-slate-950 border border-slate-700/80 rounded p-2 text-slate-200 font-mono text-xs focus:border-indigo-500 outline-none leading-relaxed"
+        className="input-field w-full font-mono text-xs leading-relaxed"
       />
     </div>
   );

@@ -25,7 +25,7 @@ export const EditorPage = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-slate-950">
+    <div className="flex-1 flex flex-col min-h-0 bg-neutral-50">
       {/* Header específico del lienzo */}
       <EditorHeader onSave={handleSave} />
 
@@ -38,7 +38,7 @@ export const EditorPage = () => {
 
       {/* Notificación Toast */}
       {toastMessage && (
-        <div className="no-print fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-2.5 rounded-lg shadow-xl flex items-center space-x-2 text-xs font-semibold animate-fade-in z-50">
+        <div className="no-print fixed bottom-6 right-6 bg-success-600 text-white px-4 py-2.5 rounded-lg shadow-lg flex items-center space-x-2 text-xs font-semibold animate-fade-in-up z-50">
           <CheckCircle2 className="w-4 h-4" />
           <span>{toastMessage}</span>
         </div>

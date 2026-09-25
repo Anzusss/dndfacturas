@@ -22,19 +22,19 @@ export const ToolboxVariableItem = ({ variable, onInsert }) => {
       draggable
       onDragStart={handleDragStart}
       onClick={() => onInsert(payload)}
-      className="flex items-center justify-between px-2.5 py-1.5 rounded-md bg-slate-800/40 hover:bg-slate-800 border border-slate-700/40 cursor-grab active:cursor-grabbing text-left transition group text-xs select-none"
+      className="flex items-center justify-between px-2.5 py-1.5 rounded-md bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 cursor-grab active:cursor-grabbing text-left transition group text-xs select-none"
       title="Arrastra a la hoja o haz clic"
     >
       <div className="truncate flex items-center gap-1.5">
-        <GripVertical className="w-3 h-3 text-slate-600 group-hover:text-slate-400 shrink-0" />
+        <GripVertical className="w-3 h-3 text-neutral-400 group-hover:text-neutral-600 shrink-0" />
         <div className="truncate">
-          <div className="font-mono text-[11px] text-purple-300">
+          <div className="font-mono text-[11px] text-primary-600">
             {`{{${variable.key}}}`}
           </div>
-          <div className="text-[10px] text-slate-400 truncate">{variable.label}</div>
+          <div className="text-[10px] text-muted truncate">{variable.label}</div>
         </div>
       </div>
-      <PlusCircle className="w-3.5 h-3.5 text-slate-500 group-hover:text-purple-300 shrink-0 ml-1" />
+      <PlusCircle className="w-3.5 h-3.5 text-neutral-400 group-hover:text-primary-500 shrink-0 ml-1" />
     </div>
   );
 };

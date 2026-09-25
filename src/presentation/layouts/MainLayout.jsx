@@ -7,7 +7,7 @@ import { Outlet } from 'react-router-dom';
  */
 export const MainLayout = () => {
   return (
-    <div className="w-full h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="w-full h-screen flex flex-col bg-neutral-50 text-neutral-900 overflow-hidden">
       <Outlet />
     </div>
   );

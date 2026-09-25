@@ -30,13 +30,6 @@ export const TotalsBlock = ({ element, previewMode }) => {
 
   return (
     <div className="w-full h-full p-2 flex flex-col justify-end text-[12px] text-black">
-      {/* Cabecera visual solo visible en modo edición */}
-      {!previewMode && (
-        <div className="text-[10px] uppercase font-bold text-slate-400 border-b border-dashed border-slate-300 pb-0.5 mb-2 flex justify-between">
-          <span>{element.title}</span>
-          <span className="font-mono text-[9px]">TOTALES</span>
-        </div>
-      )}
 
       {/* Grid de liquidación fiscal bimonetaria a 3 columnas */}
       <div

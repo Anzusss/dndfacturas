@@ -4,19 +4,23 @@ import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 export const NotFoundPage = () => {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-950 text-slate-200">
-      <AlertCircle className="w-12 h-12 text-indigo-500 mb-4" />
-      <h2 className="text-xl font-bold">Página no encontrada</h2>
-      <p className="text-sm text-slate-400 mt-1 max-w-sm">
-        La ruta a la que intentas acceder no existe en la aplicación.
-      </p>
-      <Link
-        to="/"
-        className="mt-6 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span>Volver al Editor</span>
-      </Link>
+    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-neutral-50 text-neutral-900">
+      <div className="card p-8 max-w-md w-full space-y-4">
+        <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto">
+          <AlertCircle className="w-8 h-8 text-primary-600" />
+        </div>
+        <h2 className="text-xl font-bold text-heading">Página no encontrada</h2>
+        <p className="text-sm text-muted">
+          La ruta a la que intentas acceder no existe en la aplicación.
+        </p>
+        <Link
+          to="/"
+          className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Volver al Editor</span>
+        </Link>
+      </div>
     </div>
   );
 };

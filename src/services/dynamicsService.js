@@ -1,9 +1,40 @@
 /**
- * Servicio simulador de integración con Microsoft Dynamics ERP
- * con la estructura y datos fiscales reales provistos.
+ * Servicio de integración con la API de Microsoft Dynamics ERP.
  */
+const API_BASE_URL = import.meta.env.VITE_API_DYNAMICS_URL || '';
+
 export const dynamicsService = {
   async getInvoiceData(invoiceId = 'SERIE H 0000255') {
+    try {
+      const response = await fetch(`${API_BASE_URL}/invoices/${encodeURIComponent(invoiceId)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': `Bearer ${token}` // Descomentar si requiere token de seguridad
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al consultar Dynamics: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error de conexión con la API de Dynamics:', error);
+
+      // Opcional: En entorno de desarrollo puedes hacer fallback al mock si la API no está arriba
+      if (import.meta.env.DEV) {
+        console.warn('Usando datos de respaldo (Mock) por fallo de red...');
+        return this.getMockInvoiceData(invoiceId);
+      }
+
+      throw error;
+    }
+  },
+
+  // Resguardo opcional para desarrollo offline
+  async getMockInvoiceData(invoiceId) {
     return {
       cliente: 'LA CASA DEL GRANJERO C.A (LA CASA DEL GRANJERO C.A)',
       rif: 'J-30199938-0',
@@ -38,5 +69,5 @@ export const dynamicsService = {
         igtfBs: 'Bs 6.711,29',
       },
     };
-  },
+  }
 };

@@ -14,7 +14,7 @@ export const ELEMENT_TYPES = {
  * Variables dinámicas provistas por Microsoft Dynamics ERP basadas en el formato fiscal real.
  */
 export const DYNAMICS_VARIABLES = [
-  { key: 'cliente', label: 'Cliente (Razón Social)', sample: 'LA CASA DEL GRANJERO C.A (LA CASA DEL GRANJERO C.A)' },
+  { key: 'cliente', label: 'Cliente', sample: 'LA CASA DEL GRANJERO C.A (LA CASA DEL GRANJERO C.A)' },
   { key: 'rif', label: 'RIF/C.I.', sample: 'J-30199938-0' },
   { key: 'direccion', label: 'Dirección Fiscal', sample: 'CALLE ACOSTA EDIF ELICON PISO PB LOCAL S/N SECTOR MERCADO MUNICIPAL CARUPANO SUCRE' },
   { key: 'telefono', label: 'Teléfono', sample: '(412) 760-9195 Ext. 0000' },

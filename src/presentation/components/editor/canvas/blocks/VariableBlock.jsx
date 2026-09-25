@@ -11,10 +11,10 @@ import React from 'react';
  */
 export const VariableBlock = ({ element }) => {
   return (
-    <div className="w-full h-full p-1.5 flex items-center justify-between text-xs bg-purple-50/50 text-black">
-      <span className="font-bold text-purple-900">{element.title}:</span>
+    <div className="w-full h-full p-1.5 flex items-center justify-between text-xs bg-primary-50/50 text-black">
+      <span className="font-bold text-primary-900">{element.title}:</span>
       {/* break-words evita que valores largos queden cortados con "..." */}
-      <span className="font-mono text-purple-800 ml-1 break-words">
+      <span className="font-mono text-primary-800 ml-1 break-words">
         {element.sampleValue || `{{${element.variableKey}}}`}
       </span>
     </div>

@@ -14,18 +14,7 @@ import React from 'react';
  */
 export const TableBlock = ({ element, previewMode }) => {
   return (
-    <div className="w-full h-full p-1 flex flex-col text-[12px] text-black">
-      {/* Etiqueta de edición visual: siempre en DOM para estabilizar el layout */}
-      <div
-        className={`block-editor-label text-[10px] uppercase font-bold border-b border-dashed pb-0.5 mb-1 flex justify-between ${
-          previewMode
-            ? 'invisible border-transparent'
-            : 'text-slate-400 border-slate-300'
-        }`}
-      >
-        <span>{element.title}</span>
-        <span className="font-mono text-[9px]">TABLA</span>
-      </div>
+    <div className="w-full h-full flex flex-col text-[12px] text-black">
 
       {/* Tabla HTML estandarizada */}
       <table className="w-full border-collapse text-[12px] leading-tight">
