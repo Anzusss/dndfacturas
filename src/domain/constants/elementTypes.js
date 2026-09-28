@@ -1,5 +1,13 @@
 /**
- * Tipos de bloques manipulables en el editor visual de facturas.
+ * @file Tipos de bloques manipulables en el editor visual de facturas.
+ *
+ * Capa: DOMINIO. No depende de React ni de ninguna librería de UI;
+ * cualquier capa superior (store, servicios, presentación) puede importarlo.
+ */
+
+/**
+ * Identificadores de cada tipo de bloque. El valor es el que se persiste
+ * en el JSON de la plantilla (`element.type`).
  */
 export const ELEMENT_TYPES = {
   GRID: 'grid',
@@ -7,21 +15,38 @@ export const ELEMENT_TYPES = {
   TOTALS: 'totals',
   TEXT: 'text',
   VARIABLE: 'variable',
-  LOGO: 'logo',
+  LINE: 'line',
+  LOGO: 'logo', // Reservado: aún no tiene componente de renderizado.
 };
 
 /**
- * Variables dinámicas provistas por Microsoft Dynamics ERP basadas en el formato fiscal real.
+ * Valores antiguos de `type` que pudieron quedar guardados en localStorage
+ * y su equivalente actual. Antes `ELEMENT_TYPES.LINE` no existía y las líneas
+ * se guardaban con el literal `'LINE'`.
  */
-export const DYNAMICS_VARIABLES = [
-  { key: 'cliente', label: 'Cliente', sample: 'LA CASA DEL GRANJERO C.A (LA CASA DEL GRANJERO C.A)' },
-  { key: 'rif', label: 'RIF/C.I.', sample: 'J-30199938-0' },
-  { key: 'direccion', label: 'Dirección Fiscal', sample: 'CALLE ACOSTA EDIF ELICON PISO PB LOCAL S/N SECTOR MERCADO MUNICIPAL CARUPANO SUCRE' },
-  { key: 'telefono', label: 'Teléfono', sample: '(412) 760-9195 Ext. 0000' },
-  { key: 'facturaNo', label: 'Factura No.', sample: 'SERIE H 0000255' },
-  { key: 'fecha', label: 'Fecha de Emisión', sample: '18/02/2026' },
-  { key: 'pago', label: 'Condición de Pago', sample: 'CREDITO 07 DIAS' },
-  { key: 'tasaCambio', label: 'Tasa BCV', sample: '396,3674 Bs/$' },
-  { key: 'municipio', label: 'Municipio', sample: 'Iribarren' },
-  { key: 'montoIgtfBs', label: 'Monto Estimado IGTF (Bs.)', sample: 'Bs 6.711,29' },
+export const LEGACY_ELEMENT_TYPES = {
+  LINE: ELEMENT_TYPES.LINE,
+};
+
+/**
+ * Nombre legible de cada tipo, usado en el panel de propiedades.
+ */
+export const ELEMENT_TYPE_LABELS = {
+  [ELEMENT_TYPES.GRID]: 'Bloque de datos',
+  [ELEMENT_TYPES.TABLE]: 'Tabla de renglones',
+  [ELEMENT_TYPES.TOTALS]: 'Totales',
+  [ELEMENT_TYPES.TEXT]: 'Texto / Leyenda',
+  [ELEMENT_TYPES.VARIABLE]: 'Campo ERP',
+  [ELEMENT_TYPES.LINE]: 'Línea',
+  [ELEMENT_TYPES.LOGO]: 'Logo',
+};
+
+/**
+ * Tipos que se dibujan sin fondo blanco en el lienzo para no tapar
+ * lo que haya debajo (textos sueltos, variables y líneas).
+ */
+export const TRANSPARENT_ELEMENT_TYPES = [
+  ELEMENT_TYPES.LINE,
+  ELEMENT_TYPES.TEXT,
+  ELEMENT_TYPES.VARIABLE,
 ];

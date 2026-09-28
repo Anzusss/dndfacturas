@@ -1,64 +1,85 @@
-import React from 'react';
+/**
+ * @file Gestión de columnas de la tabla de renglones: elegir qué dato del
+ * renglón muestra cada columna, quitar columnas y agregar nuevas.
+ */
+
 import { Plus, X } from 'lucide-react';
+import { ITEM_FIELDS } from '@/domain/constants/dynamicsVariables';
+import { createCustomColumn } from '@/domain/models/tableColumns';
+import { PropertySection } from './PropertySection';
 
 /**
- * Componente TableProperties
- * Administra las columnas de la tabla de renglones de la factura:
- * - Permite remover columnas existentes mediante el botón 'X'.
- * - Permite incorporar nuevas columnas personalizadas mediante un prompt.
- *
- * @param {Object} props
- * @param {Object} props.selectedElement - Elemento tipo TABLE actualmente seleccionado.
- * @param {Function} props.updateElement - Función del store para actualizar el arreglo `columns`.
+ * @param {Object}   props
+ * @param {Object}   props.element       Bloque de tipo TABLE.
+ * @param {Function} props.updateElement Acción del store `(id, cambios) => void`.
  */
-export const TableProperties = ({ selectedElement, updateElement }) => {
-  // Elimina una columna por su índice posicional
-  const removeTableColumn = (colIndex) => {
-    const updated = (selectedElement.columns || []).filter((_, idx) => idx !== colIndex);
-    updateElement(selectedElement.id, { columns: updated });
-  };
+export const TableProperties = ({ element, updateElement }) => {
+  const columns = element.columns ?? [];
 
-  // Solicita el nombre y añade una nueva columna al final de la tabla
-  const addTableColumn = () => {
-    const newColName = prompt('Nombre de la nueva columna:');
-    if (newColName && newColName.trim()) {
-      const updated = [...(selectedElement.columns || []), newColName.trim()];
-      updateElement(selectedElement.id, { columns: updated });
-    }
+  /** Reemplaza la lista de columnas del bloque. */
+  const setColumns = (updated) => updateElement(element.id, { columns: updated });
+
+  /** Cambia el dato que muestra una columna (vacío = columna libre). */
+  const setColumnField = (columnIndex, field) =>
+    setColumns(columns.map((column, index) => (index === columnIndex ? { ...column, field: field || null } : column)));
+
+  /** Quita la columna en la posición indicada. */
+  const removeColumn = (columnIndex) => setColumns(columns.filter((_, index) => index !== columnIndex));
+
+  /** Pide el nombre y añade una columna al final (luego se elige su dato). */
+  const addColumn = () => {
+    const name = window.prompt('Nombre de la nueva columna:')?.trim();
+    if (name) setColumns([...columns, createCustomColumn(name)]);
   };
 
   return (
-    <div className="space-y-2 p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[11px] font-semibold text-neutral-700">
-          Columnas de la Tabla
-        </span>
+    <PropertySection
+      title="Columnas de la Tabla"
+      action={
         <button
-          onClick={addTableColumn}
+          type="button"
+          onClick={addColumn}
           className="text-[10px] text-primary-600 hover:text-primary-700 flex items-center gap-0.5"
         >
           <Plus className="w-3 h-3" />
           <span>Agregar</span>
         </button>
-      </div>
-
+      }
+    >
       <div className="space-y-1.5">
-        {selectedElement.columns?.map((col, idx) => (
+        {columns.map((column, index) => (
           <div
-            key={idx}
-            className="flex items-center justify-between bg-white px-2 py-1 rounded border border-neutral-200 text-[11px]"
+            key={`${column.label}-${index}`}
+            className="bg-white px-2 py-1.5 rounded border border-neutral-200 text-[11px] space-y-1"
           >
-            <span className="text-neutral-800 truncate">{col}</span>
-            <button
-              onClick={() => removeTableColumn(idx)}
-              className="text-neutral-400 hover:text-error-500 p-0.5"
-              title="Eliminar columna"
+            <div className="flex items-center justify-between">
+              <span className="text-neutral-800 truncate font-medium">{column.label}</span>
+              <button
+                type="button"
+                onClick={() => removeColumn(index)}
+                className="text-neutral-400 hover:text-error-500 p-0.5"
+                title="Eliminar columna"
+                aria-label={`Eliminar columna ${column.label}`}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            <select
+              value={column.field ?? ''}
+              onChange={(e) => setColumnField(index, e.target.value)}
+              aria-label={`Dato de la columna ${column.label}`}
+              className="input-field input-field-sm w-full text-[10px]"
             >
-              <X className="w-3 h-3" />
-            </button>
+              <option value="">— Columna vacía —</option>
+              {ITEM_FIELDS.map((field) => (
+                <option key={field.key} value={field.key}>
+                  {field.label}
+                </option>
+              ))}
+            </select>
           </div>
         ))}
       </div>
-    </div>
+    </PropertySection>
   );
 };

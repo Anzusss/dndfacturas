@@ -1,71 +1,93 @@
-import React from 'react';
+/**
+ * @file Envoltorio arrastrable/redimensionable (react-rnd) de cada bloque.
+ *
+ * Responsabilidades:
+ * - Posicionar el bloque y gestionar la selección.
+ * - Bloquear arrastre y selección si la plantilla no es un borrador.
+ * - Delegar el gesto de arrastre/redimensión en `useBlockInteractions`.
+ * - Pintar la barra flotante, los tiradores y el contenido del bloque.
+ *
+ * Está envuelto en `memo` y usa selectores finos del store: cuando se mueve
+ * un bloque, los demás no se vuelven a renderizar.
+ */
+
+import { memo } from 'react';
 import { Rnd } from 'react-rnd';
-import { ELEMENT_TYPES } from '@/domain/constants/elementTypes';
+import { TRANSPARENT_ELEMENT_TYPES } from '@/domain/constants/elementTypes';
 import { useEditorStore } from '@/store/useEditorStore';
-import { BlockRenderer } from './blocks/BlockRenderer';
+import { selectIsEditable, selectIsSelected } from '@/store/editorSelectors';
+import { BlockRenderer } from '@/presentation/components/invoice/blocks/BlockRenderer';
 import { FloatingControls } from './blocks/FloatingControls';
 import { SelectionHandles } from './blocks/SelectionHandles';
-import { useBlockInteractions } from './blocks/hooks/useBlockInteractions';
+import { useBlockInteractions } from './hooks/useBlockInteractions';
 
-export const RndBlockWrapper = ({ element }) => {
-  const {
-    template, selectedElementId, setSelectedElementId, updateElement,
-    duplicateElement, removeElement, setGuideLines, zoom, previewMode,
-  } = useEditorStore();
+/**
+ * Clases del contenedor según el estado del bloque.
+ * @param {{previewMode:boolean, isSelected:boolean, isTransparent:boolean}} state
+ * @returns {string}
+ */
+const getBlockClassName = ({ previewMode, isSelected, isTransparent }) => {
+  if (previewMode) return 'z-10 border border-transparent';
 
-  const isSelected = selectedElementId === element.id && !previewMode;
-  const isTransparentType = [ELEMENT_TYPES.LINE, 'LINE', ELEMENT_TYPES.TEXT, ELEMENT_TYPES.VARIABLE].includes(element.type);
+  if (isSelected) {
+    return `z-50 ring-2 ring-primary-500 border border-primary-400 shadow-md ${
+      isTransparent ? 'bg-transparent' : 'bg-white'
+    }`;
+  }
+  return `z-10 border border-dashed border-neutral-300 hover:border-neutral-400 ${
+    isTransparent ? 'bg-transparent' : 'bg-white/90'
+  }`;
+};
 
-  const { dragPos, resizeData, handleDrag, handleDragStop, handleResize, handleResizeStop } =
-    useBlockInteractions(element, template?.elements || [], zoom, updateElement, setGuideLines);
+/**
+ * @param {Object} props
+ * @param {Object} props.element Bloque de la plantilla.
+ * @param {Object} props.data    Datos con los que se dibuja (en el editor, la factura de ejemplo).
+ */
+export const RndBlockWrapper = memo(function RndBlockWrapper({ element, data }) {
+  const isSelectedInStore = useEditorStore(selectIsSelected(element.id));
+  const zoom = useEditorStore((s) => s.zoom);
+  const previewMode = useEditorStore((s) => s.previewMode);
+  const setSelectedElementId = useEditorStore((s) => s.setSelectedElementId);
+  const editable = useEditorStore(selectIsEditable);
 
-  const selectElement = (e) => {
-    e.stopPropagation();
-    if (!previewMode) setSelectedElementId(element.id);
+  // Se puede mover/seleccionar solo si es un borrador y no se está en vista previa.
+  const interactive = editable && !previewMode;
+  const isSelected = isSelectedInStore && interactive;
+  const isTransparent = TRANSPARENT_ELEMENT_TYPES.includes(element.type);
+
+  const { rect, handlers } = useBlockInteractions(element);
+
+  /** Selecciona el bloque sin que el clic llegue al lienzo (que deseleccionaría). */
+  const selectElement = (event) => {
+    event.stopPropagation();
+    if (interactive) setSelectedElementId(element.id);
   };
 
   return (
     <Rnd
-      size={{
-        width: resizeData ? resizeData.width : (element.width || 350),
-        height: resizeData ? resizeData.height : (element.height || 120),
-      }}
-      position={{
-        x: resizeData ? resizeData.x : (dragPos ? dragPos.x : (typeof element.x === 'number' ? element.x : 57)),
-        y: resizeData ? resizeData.y : (dragPos ? dragPos.y : (typeof element.y === 'number' ? element.y : 200)),
-      }}
+      size={{ width: rect.width, height: rect.height }}
+      position={{ x: rect.x, y: rect.y }}
       onDragStart={selectElement}
       onResizeStart={selectElement}
-      onDrag={handleDrag}
-      onDragStop={handleDragStop}
-      onResize={handleResize}
-      onResizeStop={handleResizeStop}
+      {...handlers}
       bounds="parent"
-      scale={zoom}
-      disableDragging={previewMode}
-      enableResizing={!previewMode}
-      className={`group transition-shadow ${isSelected ? 'z-50' : 'z-10'} ${previewMode
-        ? 'border border-transparent'
-        : isSelected
-          ? `ring-2 ring-primary-500 border border-primary-400 shadow-md ${isTransparentType ? 'bg-transparent' : 'bg-white'}`
-          : `border border-dashed border-neutral-300 hover:border-neutral-400 ${isTransparentType ? 'bg-transparent' : 'bg-white/90'}`
-        }`}
+      scale={zoom} // Corrige el desplazamiento del ratón cuando la hoja está escalada.
+      disableDragging={!interactive}
+      enableResizing={interactive}
+      className={`group transition-shadow ${getBlockClassName({ previewMode, isSelected, isTransparent })}`}
       style={{ boxSizing: 'border-box' }}
     >
       <div
-        className={`w-full h-full relative ${previewMode ? 'cursor-default' : 'cursor-move'}`}
+        className={`w-full h-full relative ${interactive ? 'cursor-move' : 'cursor-default'}`}
         onClick={selectElement}
       >
-        <FloatingControls
-          previewMode={previewMode} isSelected={isSelected} element={element}
-          resizeData={resizeData} dragPos={dragPos}
-          duplicateElement={duplicateElement} removeElement={removeElement}
-        />
+        {isSelected && <FloatingControls elementId={element.id} rect={rect} />}
 
-        <BlockRenderer element={element} previewMode={previewMode} />
+        <BlockRenderer element={element} data={data} previewMode={previewMode} />
 
-        <SelectionHandles isSelected={isSelected} />
+        {isSelected && <SelectionHandles />}
       </div>
     </Rnd>
   );
-};
+});

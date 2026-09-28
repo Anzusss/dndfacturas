@@ -1,38 +1,40 @@
-import React from 'react';
+/**
+ * @file Resumen (solo lectura) de las filas del bloque de totales y del
+ * campo de la factura al que está enlazado cada importe.
+ */
+
 import { Info } from 'lucide-react';
+import { DEFAULT_TOTALS_ROWS } from '@/domain/models/sampleData';
+import { TOTAL_FIELDS_BY_KEY } from '@/domain/constants/dynamicsVariables';
+import { PropertySection } from './PropertySection';
+
+/** Etiqueta legible del campo enlazado (o el texto fijo si no hay enlace). */
+const describeBinding = (key, fallback) => (key ? TOTAL_FIELDS_BY_KEY[key]?.label ?? key : fallback ?? '—');
 
 /**
- * Componente TotalsProperties
- * Muestra el resumen de los renglones de liquidación activos del bloque de totales.
- * Informa al usuario sobre la sincronización con Microsoft Dynamics.
- *
  * @param {Object} props
- * @param {Object} props.selectedElement - Elemento tipo TOTALS seleccionado.
+ * @param {Object} props.element Bloque de tipo TOTALS.
  */
-export const TotalsProperties = ({ selectedElement }) => {
-  const rows = selectedElement.totalsRows || [];
+export const TotalsProperties = ({ element }) => {
+  const rows = element.totalsRows ?? DEFAULT_TOTALS_ROWS;
 
   return (
-    <div className="space-y-2 p-3 bg-neutral-50 rounded-lg border border-neutral-200 text-xs">
-      <span className="text-[11px] font-semibold text-neutral-700 block mb-1">
-        Renglones de Liquidación (US$ / Bs.)
-      </span>
-
-      {/* Lista de conceptos cargados en el bloque */}
-      <div className="space-y-1 font-mono text-[11px] text-neutral-600">
-        {rows.map((r, idx) => (
-          <div key={idx} className="flex justify-between border-b border-neutral-200 py-0.5">
-            <span className="font-sans text-neutral-700">{r.label}</span>
-            <span>{r.usd}</span>
+    <PropertySection title="Renglones de Liquidación (US$ / Bs.)">
+      <div className="space-y-1.5 text-[11px]">
+        {rows.map((row, index) => (
+          <div key={index} className="border-b border-neutral-200 pb-1">
+            <div className="font-medium text-neutral-700">{row.label}</div>
+            <div className="font-mono text-[10px] text-neutral-500">
+              {describeBinding(row.usdKey, row.usd)} · {describeBinding(row.bsKey, row.bs)}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Nota informativa */}
       <div className="pt-1.5 flex items-start gap-1.5 text-[10.5px] text-muted">
         <Info className="w-3.5 h-3.5 text-primary-500 shrink-0 mt-0.5" />
-        <span>Los valores se sincronizan automáticamente con Microsoft Dynamics.</span>
+        <span>Los importes se toman de la factura de Dynamics al imprimir.</span>
       </div>
-    </div>
+    </PropertySection>
   );
 };

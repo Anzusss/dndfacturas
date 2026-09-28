@@ -1,19 +1,26 @@
-import React from 'react';
-import { GripVertical, PlusCircle } from 'lucide-react';
+/**
+ * @file Tarjeta de un elemento estructural del Toolbox (Grid, Tabla, Totales…).
+ */
 
+import { GripVertical, PlusCircle } from 'lucide-react';
+import { getToolboxItemProps } from './toolboxItemProps';
+
+/**
+ * @param {Object}   props
+ * @param {string}   props.title
+ * @param {string}   props.subtitle
+ * @param {import('react').ComponentType<{className?:string}>} props.icon
+ * @param {string}   props.iconColor Clases de color del icono.
+ * @param {Object}   props.data      Datos del bloque a crear.
+ * @param {Function} props.onInsert  Inserción por clic.
+ */
 export const ToolboxItem = ({ title, subtitle, icon: Icon, iconColor, data, onInsert }) => {
-  const handleDragStart = (e) => {
-    e.dataTransfer.setData('application/json', JSON.stringify(data));
-    e.dataTransfer.effectAllowed = 'copy';
-  };
+  const itemProps = getToolboxItemProps(data, onInsert);
 
   return (
     <div
-      draggable
-      onDragStart={handleDragStart}
-      onClick={() => onInsert(data)}
+      {...itemProps}
       className="flex items-center justify-between p-2.5 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 hover:border-primary-300 cursor-grab active:cursor-grabbing transition group select-none"
-      title="Arrastra a la hoja o haz clic"
     >
       <div className="flex items-center space-x-2.5 truncate">
         <GripVertical className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-600 shrink-0" />

@@ -1,15 +1,19 @@
-// src/presentation/components/editor/canvas/blocks/SelectionHandles.jsx
-import React from 'react';
+/**
+ * @file Tiradores circulares decorativos en las 4 esquinas del bloque
+ * seleccionado (estilo Canva). El redimensionado real lo gestiona react-rnd;
+ * estos círculos solo indican visualmente dónde agarrar.
+ */
 
-export const SelectionHandles = ({ isSelected }) => {
-    if (!isSelected) return null;
+/** Posición de cada esquina. */
+const CORNERS = ['-top-1.5 -left-1.5', '-top-1.5 -right-1.5', '-bottom-1.5 -left-1.5', '-bottom-1.5 -right-1.5'];
 
-    return (
-        <>
-            <div className="no-print absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-primary-600 rounded-full shadow-sm pointer-events-none" />
-            <div className="no-print absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-primary-600 rounded-full shadow-sm pointer-events-none" />
-            <div className="no-print absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-primary-600 rounded-full shadow-sm pointer-events-none" />
-            <div className="no-print absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-primary-600 rounded-full shadow-sm pointer-events-none" />
-        </>
-    );
-};
+export const SelectionHandles = () => (
+  <>
+    {CORNERS.map((position) => (
+      <div
+        key={position}
+        className={`no-print absolute ${position} w-3 h-3 bg-white border-2 border-primary-600 rounded-full shadow-sm pointer-events-none`}
+      />
+    ))}
+  </>
+);

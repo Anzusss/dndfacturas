@@ -135,4 +135,4 @@ Este documento detalla la especificación técnica, la selección de librerías,
 * [ ] Pruebas de impresion en papel fisico verificando alineacion milimetrica.
 * [ ] Acoplar ruta al contenedor/pagina padre manteniendo independencia del editor.
 
-> **Nota:** `src/services/dynamicsService.js` ya existe con datos de muestra simulando respuesta de Dynamics, listo para reemplazarse con llamadas reales.
+> **Nota:** la conexión con la API vive en `src/services/invoiceApi/` (cliente HTTP configurable por `VITE_INVOICE_API_URL`, datos simulados y traductor `dynamicsInvoiceMapper.js`). La página "Imprimir" (`/print`) ya usa la plantilla activa de cada tipo y registra cada impresión en auditoría.

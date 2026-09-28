@@ -1,97 +1,61 @@
-import React, { useRef } from 'react';
+/**
+ * @file Área central del editor: fondo de escritorio + hoja de papel escalable.
+ *
+ * La hoja (`#invoice-print-sheet`) es el nodo que `printInvoice` clona para
+ * la impresión de prueba; todo lo que tenga la clase `no-print` se omite.
+ * Mientras se diseña, los bloques muestran la factura de ejemplo
+ * (SAMPLE_INVOICE_DATA).
+ */
+
+import { useRef } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
+import { SAMPLE_INVOICE_DATA } from '@/domain/models/sampleData';
+import { PRINT_SHEET_ID } from '@/utils/printUtils';
+import { InvoiceSheet } from '@/presentation/components/invoice/InvoiceSheet';
 import { MarginGuidelines } from './canvas/MarginGuidelines';
 import { RndBlockWrapper } from './canvas/RndBlockWrapper';
 import { CanvasGuides } from './canvas/CanvasGuides';
+import { useCanvasDrop } from './canvas/hooks/useCanvasDrop';
 
 export const CanvasArea = () => {
   const sheetRef = useRef(null);
+  const dropHandlers = useCanvasDrop(sheetRef);
 
-  const {
-    template,
-    setSelectedElementId,
-    addElement,
-    zoom,
-    previewMode,
-    showGridLines,
-  } = useEditorStore();
-
-  const { pageSetup, elements } = template;
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (previewMode) return;
-
-    try {
-      const rawData = e.dataTransfer.getData('application/json');
-      if (!rawData) return;
-      const data = JSON.parse(rawData);
-
-      const sheetRect = sheetRef.current?.getBoundingClientRect();
-      if (!sheetRect) return;
-
-      const rawX = (e.clientX - sheetRect.left) / zoom;
-      const rawY = (e.clientY - sheetRect.top) / zoom;
-
-      const elementWidth = data.width || 350;
-      const elementHeight = data.height || 120;
-
-      const clampedX = Math.max(10, Math.min(816 - elementWidth - 10, Math.round(rawX)));
-      const clampedY = Math.max(10, Math.min(1054 - elementHeight - 10, Math.round(rawY)));
-
-      addElement({
-        ...data,
-        id: `${data.type}-${Date.now()}`,
-        x: clampedX,
-        y: clampedY,
-        width: elementWidth,
-        height: elementHeight,
-      });
-    } catch (err) {
-      console.error('Error al soltar elemento en el lienzo:', err);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  };
+  const elements = useEditorStore((s) => s.template.elements);
+  const pageSetup = useEditorStore((s) => s.template.pageSetup);
+  const zoom = useEditorStore((s) => s.zoom);
+  const previewMode = useEditorStore((s) => s.previewMode);
+  const showGridLines = useEditorStore((s) => s.showGridLines);
+  const setSelectedElementId = useEditorStore((s) => s.setSelectedElementId);
 
   return (
     <div
-      /* Fondo gris claro de escritorio */
+      // Fondo gris de escritorio; un clic fuera de los bloques quita la selección.
       className="flex-1 overflow-auto bg-neutral-100 p-8 flex justify-center items-start min-h-0 select-none"
       onClick={() => setSelectedElementId(null)}
     >
+      {/* Contenedor escalado: el zoom se aplica aquí para no alterar las coordenadas de la hoja. */}
       <div
         style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
         className="transition-transform duration-100 ease-out"
       >
-        {/* Hoja física con sombra limpia de papel real */}
-        <div
+        <InvoiceSheet
           ref={sheetRef}
-          id="invoice-print-sheet"
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          className="print-sheet sheet text-neutral-900 relative overflow-hidden rounded-lg"
-          style={{
-            width: '816px',
-            height: '1054px',
-            fontFamily: pageSetup.fontFamily || "'Courier New', Courier, monospace",
-            boxSizing: 'border-box',
-          }}
+          id={PRINT_SHEET_ID}
+          pageSetup={pageSetup}
+          className="rounded-lg"
+          {...dropHandlers}
         >
           {showGridLines && !previewMode && (
-            <MarginGuidelines
-              paddingTop={pageSetup.paddingTop}
-              paddingBottom={pageSetup.paddingBottom}
-            />
+            <MarginGuidelines paddingTop={pageSetup.paddingTop} paddingBottom={pageSetup.paddingBottom} />
           )}
+
           {!previewMode && <CanvasGuides />}
-          {elements.map((el) => (
-            <RndBlockWrapper key={el.id} element={el} />
+
+          {elements.map((element) => (
+            <RndBlockWrapper key={element.id} element={element} data={SAMPLE_INVOICE_DATA} />
           ))}
-        </div>
+        </InvoiceSheet>
       </div>
     </div>
   );

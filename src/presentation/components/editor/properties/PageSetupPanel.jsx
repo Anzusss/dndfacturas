@@ -1,153 +1,142 @@
-import React from 'react';
+/**
+ * @file Configuración global de la plantilla (visible cuando no hay bloque
+ * seleccionado): nombre, tipo de factura, tamaño de hoja, tipografía y
+ * márgenes físicos.
+ * Si la plantilla no es un borrador, todos los campos quedan deshabilitados.
+ */
+
 import { Settings2, FileCheck } from 'lucide-react';
+import { useEditorStore } from '@/store/useEditorStore';
+import { selectIsEditable } from '@/store/editorSelectors';
+import { FONT_OPTIONS, MARGIN_LIMITS_MM, resolveFontOption } from '@/domain/constants/editorConfig';
+import { PAPER_DIMENSIONS } from '@/domain/constants/paperDimensions';
+import { MIN_PRINTABLE_HEIGHT_MM, getPaperDimensions } from '@/domain/constants/paperSizes';
+import { INVOICE_TYPE_LABELS, INVOICE_TYPE_LIST } from '@/domain/constants/invoiceTypes';
+import { parseMm } from '@/utils/units';
+import { SidebarPanel } from '@/presentation/components/common/SidebarPanel';
+import { FormField } from '@/presentation/components/common/FormField';
+import { NumberField } from '@/presentation/components/common/NumberField';
+import { PropertySection } from './PropertySection';
+import { PaperSizeSection } from './PaperSizeSection';
 
-/**
- * Extrae el valor numérico en milímetros de un string tipo "50mm".
- * @param {string|number} value
- * @param {number} fallback
- * @returns {number}
- */
-const parseMm = (value, fallback) => {
-  const parsed = parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
+/** Márgenes editables: clave en `pageSetup`, etiqueta y valor por defecto. */
+const MARGIN_FIELDS = [
+  { key: 'paddingTop', label: 'Margen Sup. (Membrete)', fallback: PAPER_DIMENSIONS.MARGIN_TOP_MM },
+  { key: 'paddingBottom', label: 'Margen Inf. (Colectas)', fallback: PAPER_DIMENSIONS.MARGIN_BOTTOM_MM },
+];
 
-/** Límites razonables para márgenes físicos en formato Carta (mm). */
-const MARGIN_MIN = 0;
-const MARGIN_MAX = 120;
+/** Clases comunes de los campos (con estilo de deshabilitado). */
+const INPUT_CLASS = 'input-field w-full text-xs disabled:bg-neutral-100 disabled:text-neutral-500';
 
-/**
- * Componente PageSetupPanel
- * Se visualiza en la barra lateral derecha cuando el usuario NO tiene ningún bloque seleccionado.
- * Permite ajustar los parámetros globales de la hoja y la impresión:
- * - Selección de tipografía fija (Courier New, Monospace, Sans-serif).
- * - Ajuste milimétrico de los márgenes físicos para papel membretado (superior) y firmas (inferior).
- *
- * @param {Object} props
- * @param {Object} props.template - Plantilla activa con su configuración de página (pageSetup).
- * @param {Function} props.updatePageSetup - Función del store para actualizar márgenes o fuentes.
- */
-export const PageSetupPanel = ({ template, updatePageSetup }) => {
-  const paddingTopMm = parseMm(template.pageSetup.paddingTop, 50);
-  const paddingBottomMm = parseMm(template.pageSetup.paddingBottom, 40);
+/** Limita un margen al rango permitido; un campo vacío equivale a 0 mm. */
+const clampMargin = (mm, max) => Math.min(max, Math.max(MARGIN_LIMITS_MM.MIN, mm ?? 0));
 
-  /**
-   * Actualiza un margen físico (en mm) validando el rango permitido.
-   * Persiste el valor en el store con el formato "Xmm" que espera el esquema.
-   */
-  const handleMarginChange = (key) => (e) => {
-    const raw = e.target.value;
-    if (raw === '') {
-      updatePageSetup({ [key]: '0mm' });
-      return;
-    }
-    const mm = Math.min(MARGIN_MAX, Math.max(MARGIN_MIN, parseInt(raw, 10) || 0));
-    updatePageSetup({ [key]: `${mm}mm` });
-  };
+export const PageSetupPanel = () => {
+  const template = useEditorStore((s) => s.template);
+  const editable = useEditorStore(selectIsEditable);
+  const updatePageSetup = useEditorStore((s) => s.updatePageSetup);
+  const renameTemplate = useEditorStore((s) => s.renameTemplate);
+  const setInvoiceType = useEditorStore((s) => s.setInvoiceType);
+  const { pageSetup } = template;
+  const disabled = !editable;
+
+  // El margen máximo depende del alto de la hoja (en media carta 120 mm no tiene sentido).
+  const { heightMm } = getPaperDimensions(pageSetup);
+  const maxMargin = Math.max(0, Math.min(MARGIN_LIMITS_MM.MAX, heightMm - MIN_PRINTABLE_HEIGHT_MM));
+  const marginsTotal = MARGIN_FIELDS.reduce((sum, { key, fallback }) => sum + parseMm(pageSetup[key], fallback), 0);
+  const marginsTooBig = heightMm - marginsTotal < MIN_PRINTABLE_HEIGHT_MM;
 
   return (
-    <aside className="no-print w-72 bg-white border-l border-neutral-200 text-neutral-800 flex flex-col h-[calc(100vh-3.5rem)] select-none shadow-sm">
-      {/* Encabezado del panel */}
-      <div className="p-4 border-b border-neutral-100 flex items-center justify-between">
-        <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
-            Configuración de Página
-          </h2>
-          <p className="text-[11px] text-subtle mt-0.5">
-            Formato de hoja y márgenes de impresión
-          </p>
-        </div>
-        <Settings2 className="w-4 h-4 text-subtle" />
-      </div>
-
-      <div className="p-4 space-y-4 text-xs">
-        <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200 space-y-3">
-          {/* Formato de papel (Carta / Letter fijo) */}
-          <div>
-            <label className="text-[11px] font-medium text-muted block mb-1">
-              Formato de Papel
-            </label>
+    <SidebarPanel
+      title="Configuración de Página"
+      subtitle="Plantilla, formato de hoja y márgenes"
+      icon={Settings2}
+    >
+      <PropertySection>
+        <FormField label="Nombre de la Plantilla">
+          {(id) => (
             <input
+              id={id}
               type="text"
-              disabled
-              value="CARTA (Letter 216mm × 279mm)"
-              className="input-field w-full font-mono text-[11px] bg-neutral-100"
+              value={template.name}
+              disabled={disabled}
+              onChange={(e) => renameTemplate(e.target.value)}
+              className={INPUT_CLASS}
             />
-          </div>
+          )}
+        </FormField>
 
-          {/* Selector de tipografía predeterminada */}
-          <div>
-            <label className="text-[11px] font-medium text-muted block mb-1">
-              Tipografía Estándar
-            </label>
+        {/* La plantilla solo podrá activarse para facturas de este tipo. */}
+        <FormField label="Tipo de Factura">
+          {(id) => (
             <select
-              value={template.pageSetup.fontFamily}
-              onChange={(e) => updatePageSetup({ fontFamily: e.target.value })}
-              className="input-field w-full text-xs"
+              id={id}
+              value={template.invoiceType}
+              disabled={disabled}
+              onChange={(e) => setInvoiceType(e.target.value)}
+              className={INPUT_CLASS}
             >
-              <option value="'Courier New', Courier, monospace">Courier New (Fiel a Matriz / Fiscal)</option>
-              <option value="ui-monospace, monospace">Monospace Moderno</option>
-              <option value="system-ui, sans-serif">Sans-serif</option>
+              {INVOICE_TYPE_LIST.map((type) => (
+                <option key={type} value={type}>
+                  {INVOICE_TYPE_LABELS[type]}
+                </option>
+              ))}
             </select>
-          </div>
+          )}
+        </FormField>
 
-          {/* Entradas numéricas para márgenes físicos (mm) */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <div>
-              <label className="text-[10px] text-muted block mb-1">
-                Margen Sup. (Membrete)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min={MARGIN_MIN}
-                  max={MARGIN_MAX}
-                  step={1}
-                  value={paddingTopMm}
-                  onChange={handleMarginChange('paddingTop')}
-                  className="input-field w-full font-mono text-xs pr-7"
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-subtle font-mono pointer-events-none">
-                  mm
-                </span>
-              </div>
-            </div>
+        <PaperSizeSection disabled={disabled} />
 
-            <div>
-              <label className="text-[10px] text-muted block mb-1">
-                Margen Inf. (Colectas)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min={MARGIN_MIN}
-                  max={MARGIN_MAX}
-                  step={1}
-                  value={paddingBottomMm}
-                  onChange={handleMarginChange('paddingBottom')}
-                  className="input-field w-full font-mono text-xs pr-7"
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-subtle font-mono pointer-events-none">
-                  mm
-                </span>
-              </div>
-            </div>
-          </div>
+        <FormField label="Tipografía Estándar">
+          {(id) => (
+            <select
+              id={id}
+              value={resolveFontOption(pageSetup.fontFamily)}
+              disabled={disabled}
+              onChange={(e) => updatePageSetup({ fontFamily: e.target.value })}
+              className={INPUT_CLASS}
+            >
+              {FONT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </FormField>
 
-          {/* Indicador visual del rango válido */}
-          <p className="text-[10px] text-subtle">
-            Rango permitido: {MARGIN_MIN}–{MARGIN_MAX} mm. Las guías ámbar en la hoja se actualizan en tiempo real.
-          </p>
+        {/* Márgenes físicos: se guardan como "Xmm" según el esquema de la plantilla. */}
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          {MARGIN_FIELDS.map(({ key, label, fallback }) => (
+            <NumberField
+              key={key}
+              label={label}
+              unit="mm"
+              min={MARGIN_LIMITS_MM.MIN}
+              max={maxMargin}
+              disabled={disabled}
+              value={parseMm(pageSetup[key], fallback)}
+              onChange={(mm) => updatePageSetup({ [key]: `${clampMargin(mm, maxMargin)}mm` })}
+            />
+          ))}
         </div>
 
-        {/* Mensaje de ayuda contextual */}
-        <div className="p-3 bg-primary-50 border border-primary-200 rounded-lg text-[11px] text-primary-700 flex items-start gap-2">
-          <FileCheck className="w-4 h-4 shrink-0 text-primary-500 mt-0.5" />
-          <span>
-            Selecciona cualquier elemento en la hoja para ajustar su posición libre (X, Y) o redimensionarlo.
-          </span>
-        </div>
+        <p className={`text-[10px] ${marginsTooBig ? 'text-error-600 font-medium' : 'text-subtle'}`}>
+          {marginsTooBig
+            ? `Los márgenes dejan menos de ${MIN_PRINTABLE_HEIGHT_MM} mm imprimibles en esta hoja; redúcelos.`
+            : `Rango permitido: ${MARGIN_LIMITS_MM.MIN}–${maxMargin} mm. Las guías ámbar se actualizan en tiempo real.`}
+        </p>
+      </PropertySection>
+
+      {/* Ayuda contextual */}
+      <div className="p-3 bg-primary-50 border border-primary-200 rounded-lg text-[11px] text-primary-700 flex items-start gap-2">
+        <FileCheck className="w-4 h-4 shrink-0 text-primary-500 mt-0.5" />
+        <span>
+          {editable
+            ? 'Selecciona cualquier elemento en la hoja para ajustar su posición libre (X, Y) o redimensionarlo.'
+            : 'Vista de solo lectura. Los datos que ves son la factura de ejemplo.'}
+        </span>
       </div>
-    </aside>
+    </SidebarPanel>
   );
 };

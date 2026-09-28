@@ -1,145 +1,234 @@
-import { create } from 'zustand';
-import { createDefaultInvoiceTemplate } from '../domain/models/invoiceTemplate';
+/**
+ * @file Store global del editor (Zustand).
+ *
+ * Capa: ESTADO / APLICACIÓN. Contiene la plantilla que se está editando y el
+ * estado de la interfaz del lienzo (selección, zoom, vista previa, guías).
+ * Las reglas de creación de bloques viven en el dominio (`elementFactory`);
+ * aquí solo se orquestan las actualizaciones inmutables del estado.
+ *
+ * BLOQUEO: solo los borradores se pueden modificar. Todas las acciones que
+ * cambian la plantilla pasan por `whenEditable`, que ignora el cambio si la
+ * plantilla está en revisión o aprobada (defensa extra, además de la UI).
+ *
+ * IMPORTANTE (rendimiento): consume el store siempre con un selector,
+ * p. ej. `useEditorStore((s) => s.zoom)`. Llamar a `useEditorStore()` sin
+ * selector suscribe el componente a TODO el estado y lo re-renderiza en cada
+ * movimiento del ratón mientras se arrastra un bloque.
+ */
 
-export const useEditorStore = create((set, get) => ({
+import { create } from 'zustand';
+import {
+  createDefaultInvoiceTemplate,
+  createDefaultLayout,
+  normalizeTemplate,
+} from '@/domain/models/invoiceTemplate';
+import { isEditable } from '@/domain/models/templateLifecycle';
+import { createElement, duplicateElementData, getElementRect } from '@/domain/models/elementFactory';
+import { buildPaperSetup, fitRectToSheet, getPaperDimensions } from '@/domain/constants/paperSizes';
+import { ZOOM_LIMITS } from '@/domain/constants/editorConfig';
+
+/** Estado de guías "sin guía activa". */
+const NO_GUIDES = { x: null, y: null };
+
+/**
+ * Devuelve una copia de la plantilla con la lista de elementos transformada.
+ * @param {Object} template
+ * @param {(elements: Object[]) => Object[]} transform
+ */
+const withElements = (template, transform) => ({
+  ...template,
+  elements: transform(template.elements),
+});
+
+/**
+ * Envuelve un "updater" de Zustand para que solo se aplique sobre borradores.
+ * @param {(state: Object) => Object} updater
+ * @returns {(state: Object) => Object}
+ */
+const whenEditable = (updater) => (state) => (isEditable(state.template) ? updater(state) : state);
+
+/** Medidas de la hoja de la plantilla abierta. */
+const sheetOf = (state) => getPaperDimensions(state.template.pageSetup);
+
+export const useEditorStore = create((set) => ({
+  // ───────────── Estado ─────────────
+
+  /** Plantilla (versión concreta) abierta en el editor. */
   template: createDefaultInvoiceTemplate(),
+
+  /** Id del bloque seleccionado o `null` si no hay selección. */
   selectedElementId: null,
-  zoom: 1, // 100%
+
+  /** Escala del lienzo (1 = 100%). */
+  zoom: ZOOM_LIMITS.DEFAULT,
+
+  /** Vista previa: congela arrastre/redimensión y oculta ayudas visuales. */
   previewMode: false,
+
+  /** Muestra las zonas reservadas de margen (membrete / pie). */
   showGridLines: true,
 
-  // === ESTADO PARA LAS GUÍAS INTELIGENTES ===
-  guideLines: { x: null, y: null },
+  /** Guías inteligentes de alineación activas durante el arrastre (en px). */
+  guideLines: NO_GUIDES,
 
-  setTemplate: (template) => set({ template }),
+  // ───────────── Acciones de interfaz ─────────────
+
+  /** Abre una plantilla en el editor (p. ej. desde la página de plantillas). */
+  setTemplate: (template) =>
+    set({
+      template: normalizeTemplate(template),
+      selectedElementId: null,
+      previewMode: false,
+      guideLines: NO_GUIDES,
+    }),
 
   setSelectedElementId: (id) => set({ selectedElementId: id }),
 
-  setZoom: (zoom) => set({ zoom }),
+  /** Ajusta el zoom respetando los límites y redondeando a 2 decimales
+   *  (evita valores como 0.30000000000000004 al sumar pasos de 0.1). */
+  setZoom: (zoom) =>
+    set({
+      zoom: Math.round(Math.min(ZOOM_LIMITS.MAX, Math.max(ZOOM_LIMITS.MIN, zoom)) * 100) / 100,
+    }),
 
   setPreviewMode: (previewMode) => set({ previewMode }),
 
   toggleGridLines: () => set((state) => ({ showGridLines: !state.showGridLines })),
 
-  // === ACCIÓN PARA ACTUALIZAR LAS LÍNEAS DE GUÍA EN TIEMPO REAL ===
+  /** Actualiza las guías de alineación en tiempo real. */
   setGuideLines: (guideLines) => set({ guideLines }),
 
-  addElement: (newElement) => {
-    set((state) => {
-      const defaultY = state.template.elements.length > 0
-        ? Math.min(850, Math.max(...state.template.elements.map((e) => (typeof e.y === 'number' ? e.y : 200))) + 30)
-        : 200;
+  /** Oculta las guías de alineación. */
+  clearGuideLines: () => set({ guideLines: NO_GUIDES }),
 
-      const elementWithCoords = {
-        x: typeof newElement.x === 'number' ? newElement.x : 57,
-        y: typeof newElement.y === 'number' ? newElement.y : defaultY,
-        width: typeof newElement.width === 'number' ? newElement.width : 350,
-        height: typeof newElement.height === 'number' ? newElement.height : 110,
-        ...newElement,
-      };
+  // ───────────── Acciones sobre la plantilla (solo borradores) ─────────────
 
-      return {
+  /** Cambia el nombre visible de la plantilla. */
+  renameTemplate: (name) => set(whenEditable((state) => ({ template: { ...state.template, name } }))),
+
+  /** Cambia el tipo de factura (crédito/contado) para el que se diseña. */
+  setInvoiceType: (invoiceType) =>
+    set(whenEditable((state) => ({ template: { ...state.template, invoiceType } }))),
+
+  /** Mezcla cambios en la configuración de página (márgenes, fuente…). */
+  updatePageSetup: (pageSetupUpdates) =>
+    set(
+      whenEditable((state) => ({
         template: {
           ...state.template,
-          elements: [...state.template.elements, elementWithCoords],
+          pageSetup: { ...state.template.pageSetup, ...pageSetupUpdates },
         },
-        selectedElementId: elementWithCoords.id,
-      };
-    });
-  },
+      })),
+    ),
 
-  updateElement: (id, updates) => {
-    set((state) => ({
-      template: {
-        ...state.template,
-        elements: state.template.elements.map((el) =>
-          el.id === id ? { ...el, ...updates } : el
+  /**
+   * Cambia el tamaño u orientación de la hoja.
+   * @param {{size:string, orientation?:string, customWidthMm?:number, customHeightMm?:number}} paper
+   */
+  setPaperSize: (paper) =>
+    set(
+      whenEditable((state) => ({
+        template: {
+          ...state.template,
+          pageSetup: { ...state.template.pageSetup, ...buildPaperSetup(paper) },
+        },
+      })),
+    ),
+
+  /** Recoloca (y encoge si hace falta) los bloques que se salen de la hoja. */
+  fitElementsToSheet: () =>
+    set(
+      whenEditable((state) => {
+        const sheet = sheetOf(state);
+        return {
+          template: withElements(state.template, (elements) =>
+            elements.map((el) => ({ ...el, ...fitRectToSheet(getElementRect(el), sheet) })),
+          ),
+        };
+      }),
+    ),
+
+  /**
+   * Restaura el diseño base del tamaño de hoja actual (ver createDefaultLayout),
+   * conservando la identidad de la plantilla (id, versión, nombre, tipo,
+   * estado). Así "Restaurar" + "Guardar" nunca sobrescribe otra plantilla.
+   */
+  resetToDefault: () =>
+    set(
+      whenEditable((state) => ({
+        template: { ...state.template, ...createDefaultLayout(state.template.pageSetup) },
+        selectedElementId: null,
+        guideLines: NO_GUIDES,
+      })),
+    ),
+
+  // ───────────── Acciones sobre bloques (solo borradores) ─────────────
+
+  /**
+   * Añade un bloque a partir de datos parciales y lo deja seleccionado.
+   * `createElement` completa id, posición y tamaño si faltan.
+   */
+  addElement: (data) =>
+    set(
+      whenEditable((state) => {
+        const element = createElement(data, state.template.elements, sheetOf(state));
+        return {
+          template: withElements(state.template, (elements) => [...elements, element]),
+          selectedElementId: element.id,
+        };
+      }),
+    ),
+
+  /** Mezcla cambios en un bloque concreto. */
+  updateElement: (id, updates) =>
+    set(
+      whenEditable((state) => ({
+        template: withElements(state.template, (elements) =>
+          elements.map((el) => (el.id === id ? { ...el, ...updates } : el)),
         ),
-      },
-    }));
-  },
+      })),
+    ),
 
-  removeElement: (id) => {
-    set((state) => ({
-      template: {
-        ...state.template,
-        elements: state.template.elements.filter((el) => el.id !== id),
-      },
-      selectedElementId: state.selectedElementId === id ? null : state.selectedElementId,
-    }));
-  },
+  /** Elimina un bloque y limpia la selección si era el seleccionado. */
+  removeElement: (id) =>
+    set(
+      whenEditable((state) => ({
+        template: withElements(state.template, (elements) => elements.filter((el) => el.id !== id)),
+        selectedElementId: state.selectedElementId === id ? null : state.selectedElementId,
+      })),
+    ),
 
-  moveElement: (id, direction) => {
-    set((state) => {
-      const elements = [...state.template.elements];
-      const index = elements.findIndex((el) => el.id === id);
-      if (index === -1) return state;
+  /**
+   * Mueve un bloque una posición en el orden de apilamiento (z-order).
+   * @param {string} id
+   * @param {'up'|'down'} direction
+   */
+  moveElement: (id, direction) =>
+    set(
+      whenEditable((state) => {
+        const elements = [...state.template.elements];
+        const index = elements.findIndex((el) => el.id === id);
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (index === -1 || targetIndex < 0 || targetIndex >= elements.length) return state;
 
-      const targetIndex = direction === 'up' ? index - 1 : index + 1;
-      if (targetIndex < 0 || targetIndex >= elements.length) return state;
+        const [moved] = elements.splice(index, 1);
+        elements.splice(targetIndex, 0, moved);
+        return { template: { ...state.template, elements } };
+      }),
+    ),
 
-      const [removed] = elements.splice(index, 1);
-      elements.splice(targetIndex, 0, removed);
+  /** Duplica un bloque justo después del original y selecciona la copia. */
+  duplicateElement: (id) =>
+    set(
+      whenEditable((state) => {
+        const index = state.template.elements.findIndex((el) => el.id === id);
+        if (index === -1) return state;
 
-      return {
-        template: {
-          ...state.template,
-          elements,
-        },
-      };
-    });
-  },
+        const copy = duplicateElementData(state.template.elements[index], sheetOf(state));
+        const elements = [...state.template.elements];
+        elements.splice(index + 1, 0, copy);
 
-  duplicateElement: (id) => {
-    set((state) => {
-      const element = state.template.elements.find((el) => el.id === id);
-      if (!element) return state;
-
-      const duplicated = {
-        ...element,
-        id: `${element.type}-${Date.now()}`,
-        title: `${element.title || 'Bloque'} (Copia)`,
-        x: Math.min(700, (typeof element.x === 'number' ? element.x : 57) + 20),
-        y: Math.min(950, (typeof element.y === 'number' ? element.y : 200) + 20),
-      };
-
-      const index = state.template.elements.findIndex((el) => el.id === id);
-      const elements = [...state.template.elements];
-      elements.splice(index + 1, 0, duplicated);
-
-      return {
-        template: {
-          ...state.template,
-          elements,
-        },
-        selectedElementId: duplicated.id,
-      };
-    });
-  },
-
-  updatePageSetup: (pageSetupUpdates) => {
-    set((state) => ({
-      template: {
-        ...state.template,
-        pageSetup: {
-          ...state.template.pageSetup,
-          ...pageSetupUpdates,
-        },
-      },
-    }));
-  },
-
-  resetToDefault: () => {
-    const defaultTemplate = createDefaultInvoiceTemplate();
-    set({
-      template: defaultTemplate,
-      selectedElementId: null,
-      guideLines: { x: null, y: null },
-    });
-  },
-
-  getSelectedElement: () => {
-    const { template, selectedElementId } = get();
-    return template.elements.find((el) => el.id === selectedElementId) || null;
-  },
+        return { template: { ...state.template, elements }, selectedElementId: copy.id };
+      }),
+    ),
 }));

@@ -1,22 +1,21 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { MainLayout } from '@/presentation/layouts/MainLayout';
-import { EditorPage } from '@/presentation/pages/EditorPage';
-import { TemplatesPage } from '@/presentation/pages/TemplatesPage';
-import { AuditPage } from '@/presentation/pages/AuditPage';
-import { NotFoundPage } from '@/presentation/pages/NotFoundPage';
+/**
+ * @file Enrutador de la aplicación en modo independiente.
+ *
+ * Monta las páginas (`featureRoutes`) dentro de `MainLayout`. Cuando la app
+ * se integre en la plantilla de la empresa, este archivo dejará de usarse:
+ * su router montará `featureRoutes` directamente (ver appRoutes.jsx).
+ */
 
-export const AppRouter = () => {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<EditorPage />} />
-          <Route path="templates" element={<TemplatesPage />} />
-          <Route path="audit" element={<AuditPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
-};
+import { BrowserRouter, useRoutes } from 'react-router-dom';
+import { MainLayout } from '@/presentation/layouts/MainLayout';
+import { featureRoutes } from './appRoutes';
+import { ROUTES } from './routePaths';
+
+/** Árbol de rutas: layout mínimo + páginas. */
+const AppRoutes = () => useRoutes([{ path: ROUTES.EDITOR, element: <MainLayout />, children: featureRoutes }]);
+
+export const AppRouter = () => (
+  <BrowserRouter>
+    <AppRoutes />
+  </BrowserRouter>
+);

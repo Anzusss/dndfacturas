@@ -1,48 +1,48 @@
-import React, { useState } from 'react';
+/**
+ * @file Página del editor visual (ruta "/").
+ * Layout: cabecera + barra de estado + 3 columnas (Toolbox | Lienzo | Propiedades).
+ */
+
+import { useEditorStore } from '@/store/useEditorStore';
+import { templateWorkflowService } from '@/services/templateWorkflowService';
+import { useToast } from '@/presentation/hooks/useToast';
+import { useCurrentUser } from '@/presentation/hooks/useCurrentUser';
+import { Toast } from '@/presentation/components/common/Toast';
 import { EditorHeader } from '../components/editor/EditorHeader';
+import { TemplateStatusBar } from '../components/editor/header/TemplateStatusBar';
 import { ToolboxSidebar } from '../components/editor/ToolboxSidebar';
 import { CanvasArea } from '../components/editor/CanvasArea';
 import { PropertiesSidebar } from '../components/editor/PropertiesSidebar';
-import { useEditorStore } from '@/store/useEditorStore';
-import { templateService } from '@/services/templateService';
-import { auditService } from '@/services/auditService';
-import { CheckCircle2 } from 'lucide-react';
 
 export const EditorPage = () => {
-  const { template } = useEditorStore();
-  const [toastMessage, setToastMessage] = useState(null);
+  const { toast, showToast } = useToast();
+  const user = useCurrentUser();
 
+  /**
+   * Guarda el borrador actual. Se lee del store en el momento del clic para
+   * no suscribir la página entera a cada cambio de la plantilla.
+   */
   const handleSave = async () => {
-    await templateService.saveTemplate(template);
-    showToast('Plantilla guardada con éxito.');
-  };
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
+    try {
+      await templateWorkflowService.saveDraft(useEditorStore.getState().template, user);
+      showToast('Borrador guardado con éxito.');
+    } catch (error) {
+      showToast(error.message || 'No se pudo guardar la plantilla.', 'error');
+    }
   };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-neutral-50">
-      {/* Header específico del lienzo */}
       <EditorHeader onSave={handleSave} />
+      <TemplateStatusBar onNotify={showToast} />
 
-      {/* Layout de 3 columnas para el lienzo "Canva" */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         <ToolboxSidebar />
         <CanvasArea />
         <PropertiesSidebar />
       </div>
 
-      {/* Notificación Toast */}
-      {toastMessage && (
-        <div className="no-print fixed bottom-6 right-6 bg-success-600 text-white px-4 py-2.5 rounded-lg shadow-lg flex items-center space-x-2 text-xs font-semibold animate-fade-in-up z-50">
-          <CheckCircle2 className="w-4 h-4" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      <Toast toast={toast} />
     </div>
   );
 };
