@@ -5,9 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "vite --mode backend",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mock-api": "node mock-api/server.js",
+    "db:seed": "node database/scripts/generate-seed.mjs",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "backend:dev": "npm --prefix backend run start:dev",
+    "backend:test": "npm --prefix backend test && npm --prefix backend run test:e2e"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
