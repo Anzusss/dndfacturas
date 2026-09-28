@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "dndFacturas - API de facturas",
+    "description": "Peticiones para probar la API de facturas. Por defecto apunta a la API simulada local (npm run mock-api). Cuando tengas la API real, cambia la variable baseUrl de la colección.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" }
+  ],
+  "item": [
+    {
+      "name": "Listar facturas disponibles (solo mock)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{baseUrl}}/facturas"
+      }
+    },
+    {
+      "name": "Factura de crédito (importes como texto)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{baseUrl}}/facturas/SERIE%20H%200000255"
+      }
+    },
+    {
+      "name": "Factura de contado (importes como números)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{baseUrl}}/facturas/SERIE%20H%200000256"
+      }
+    },
+    {
+      "name": "Factura inexistente (debe dar 404)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{baseUrl}}/facturas/NO-EXISTE"
+      }
+    }
+  ]
+}
