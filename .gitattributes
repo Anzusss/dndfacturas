@@ -1,0 +1,4 @@
+# Los scripts que se ejecutan dentro de contenedores Linux deben tener finales de línea LF
+# (con CRLF de Windows, sh y psql fallan).
+*.sh  text eol=lf
+*.sql text eol=lf
