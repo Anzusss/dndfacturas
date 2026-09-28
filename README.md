@@ -7,6 +7,9 @@ cada impresión y cada cambio de plantilla.
 
 Consulta [`roadmap.md`](roadmap.md) para el alcance completo y las fases pendientes.
 
+> **¿Primera vez en un ordenador nuevo?** Sigue [`GUIA_INICIO.md`](GUIA_INICIO.md): requisitos,
+> instalación, prueba rápida, cómo conectar la API de Dynamics y preguntas pendientes.
+
 ## Puesta en marcha
 
 ### Opción A · Todo completo (frontend + backend + base de datos)
