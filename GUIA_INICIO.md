@@ -154,6 +154,17 @@ Si todo esto funciona, el entorno está listo.
 ## 8. Preguntas pendientes para la empresa
 
 - [ ] **Tipos de factura**: ¿solo crédito y contado? ¿Qué código usa Dynamics para cada uno?
+- [ ] **`document_type_id`** (llega `3`): ¿es crédito/contado o el tipo de documento (en Dynamics GP,
+      3 = Factura)? Mientras tanto, crédito/contado se deduce por fechas (vencimiento > emisión = crédito).
+      Si lo confirman, se configura en `DOCUMENT_TYPE_CODES` de `dynamicsInvoiceMapper.js`.
+- [ ] **`exempt_total_*`**: en la factura 0008894 vale lo mismo que el subtotal, pero los renglones llevan
+      IVA. ¿Qué significa realmente? Hoy base imponible y exento se calculan desde los renglones.
+- [ ] **Moneda**: ¿los importes `*_functional` son siempre bolívares? ¿Qué trae `exchange_rate` en
+      facturas en dólares (Bs por US$)?
+- [ ] **Condición de pago**: ¿Dynamics tiene un texto propio (p. ej. "CREDITO 07 DIAS") que puedan
+      añadir a la API? Hoy se calcula con las fechas.
+- [ ] **Unidad de medida y municipio**: no vienen en la API; ¿se pueden añadir o se quitan de la plantilla?
+- [ ] **Pagos (`payments`)**: ¿deben aparecer en la factura (anticipos, retenciones)?
 - [ ] **Hoja física**: medir la "media carta" que usan (¿216 × 140 mm?, ¿horizontal?) y el alto del
       membrete, para ajustar márgenes (el diseño base de media carta usa 25 mm arriba y 15 mm abajo, supuestos).
 - [ ] **Facturas largas**: si no caben en una hoja, ¿varias hojas (cada una con su nº de control) o máximo de renglones?

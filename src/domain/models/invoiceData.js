@@ -38,18 +38,20 @@ export const getValueByPath = (data, path) =>
 const isMissing = (value) => value === undefined || value === null || value === '';
 
 /**
- * Sustituye las `{{variables}}` de un texto. Las que no tienen valor se dejan
- * tal cual para que se note en la vista previa.
+ * Sustituye las `{{variables}}` de un texto.
  *
  * @param {string} text
  * @param {Object} data
  * @param {(value:any, path:string) => string} [format] Cómo convertir cada valor a texto.
+ * @param {(match:string) => string} [onMissing] Qué poner si el dato no llegó:
+ *   por defecto se deja `{{campo}}` para que se note en el editor; al imprimir
+ *   se pasa `() => ''` para no imprimir marcadores en el papel.
  * @returns {string}
  */
-export const interpolateText = (text = '', data, format = (value) => String(value)) =>
+export const interpolateText = (text = '', data, format = (value) => String(value), onMissing = (match) => match) =>
   text.replace(PLACEHOLDER_REGEX, (match, path) => {
     const value = getValueByPath(data, path);
-    return isMissing(value) ? match : format(value, path);
+    return isMissing(value) ? onMissing(match) : format(value, path);
   });
 
 /**
@@ -134,5 +136,7 @@ export const validateInvoiceData = (data) => {
   if (!Array.isArray(data.items) || data.items.length === 0) {
     warnings.push('La factura no trae renglones (items).');
   }
+  // Avisos detectados al traducir el JSON de la API (moneda, totales que no cuadran…).
+  if (Array.isArray(data.notices)) warnings.push(...data.notices);
   return { errors, warnings };
 };

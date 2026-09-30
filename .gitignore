@@ -28,3 +28,6 @@ dist-ssr
 
 # Cobertura de tests
 coverage
+
+# Caché de compilación incremental de TypeScript
+*.tsbuildinfo

@@ -27,7 +27,9 @@ export const DYNAMICS_VARIABLES = [
   { key: 'telefono', label: 'Teléfono' },
   { key: 'facturaNo', label: 'Factura No.' },
   { key: 'fecha', label: 'Fecha de Emisión' },
+  { key: 'fechaVencimiento', label: 'Fecha de Vencimiento' },
   { key: 'pago', label: 'Condición de Pago' },
+  { key: 'moneda', label: 'Moneda' },
   { key: 'tasaCambio', label: 'Tasa BCV' },
   { key: 'municipio', label: 'Municipio' },
   { key: 'montoIgtfBs', label: 'Monto Estimado IGTF (Bs.)', format: 'ves' },
@@ -39,6 +41,7 @@ export const ITEM_FIELDS = [
   { key: 'um', label: 'Unidad de medida' },
   { key: 'descripcion', label: 'Descripción' },
   { key: 'precioUsd', label: 'Precio / Tarifa (US$)', format: 'usd' },
+  { key: 'precioBs', label: 'Precio / Tarifa (Bs.)', format: 'ves' },
   { key: 'subtotalUsd', label: 'Sub-total (US$)', format: 'usd' },
   { key: 'subtotalBs', label: 'Sub-total (Bs.)', format: 'ves' },
 ];

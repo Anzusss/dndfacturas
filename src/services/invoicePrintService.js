@@ -27,6 +27,15 @@ import { auditService } from './auditService';
  * @property {number}      previousPrints Veces que ya se imprimió esta factura.
  */
 
+/**
+ * Quita de los "campos que faltan" los que es normal que falten: en una
+ * factura en bolívares no hay importes en US$ (ya lo explica un aviso aparte).
+ * @param {string[]} missing
+ * @param {Object} invoice
+ */
+const filterExpectedGaps = (missing, invoice) =>
+  invoice.moneda === 'VES' ? missing.filter((path) => !path.endsWith('Usd')) : missing;
+
 export const invoicePrintService = {
   /**
    * Descarga el JSON de una factura (backend, API directa o mock).
@@ -57,7 +66,7 @@ export const invoicePrintService = {
       template,
       errors,
       warnings,
-      missingFields: template ? findMissingBindings(template, invoice) : [],
+      missingFields: template ? filterExpectedGaps(findMissingBindings(template, invoice), invoice) : [],
       previousPrints: invoice.facturaNo ? await auditService.countPrints(invoice.facturaNo) : 0,
     };
   },

@@ -12,20 +12,24 @@ import { displayField } from '../bindings';
 
 /**
  * Valor de una celda: el campo enlazado o, si no hay, el texto fijo.
- * @param {Object} data
- * @param {string} [key]      Ruta del campo.
- * @param {string} [fallback] Texto fijo.
+ * @param {Object}  data
+ * @param {string}  [key]      Ruta del campo.
+ * @param {string}  [fallback] Texto fijo.
  * @param {'usd'|'ves'} format
+ * @param {boolean} showPlaceholder Mostrar `{{campo}}` si falta (solo en el editor).
  */
-const cellValue = (data, key, fallback, format) => (key ? displayField(data, key, format) : fallback ?? '');
+const cellValue = (data, key, fallback, format, showPlaceholder) =>
+  key ? displayField(data, key, { format, showPlaceholder }) : fallback ?? '';
 
 /**
  * @param {Object} props
  * @param {Object} props.element
  * @param {Array<{label:string, usdKey?:string, bsKey?:string, isBold?:boolean}>} [props.element.totalsRows]
  * @param {Object} props.data Datos de la factura.
+ * @param {boolean} props.previewMode Impresión/vista previa: importes que faltan en blanco
+ *   (p. ej. la columna US$ de una factura en bolívares).
  */
-export const TotalsBlock = ({ element, data }) => {
+export const TotalsBlock = ({ element, data, previewMode }) => {
   const rows = element.totalsRows ?? DEFAULT_TOTALS_ROWS;
 
   return (
@@ -39,8 +43,8 @@ export const TotalsBlock = ({ element, data }) => {
           return (
             <Fragment key={index}>
               <div className={`text-left pr-2 ${weight}`}>{row.label}</div>
-              <div className={weight}>{cellValue(data, row.usdKey, row.usd, 'usd')}</div>
-              <div className={weight}>{cellValue(data, row.bsKey, row.bs, 'ves')}</div>
+              <div className={weight}>{cellValue(data, row.usdKey, row.usd, 'usd', !previewMode)}</div>
+              <div className={weight}>{cellValue(data, row.bsKey, row.bs, 'ves', !previewMode)}</div>
             </Fragment>
           );
         })}

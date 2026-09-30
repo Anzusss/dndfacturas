@@ -27,7 +27,7 @@ export const VariableBlock = ({ element, data, previewMode }) => {
       <span className={`font-bold ${styles.label}`}>{element.title}:</span>
       {/* break-words evita que valores largos queden cortados. */}
       <span className={`font-mono ml-1 break-words ${styles.value}`}>
-        {displayField(data, element.variableKey)}
+        {displayField(data, element.variableKey, { showPlaceholder: !previewMode })}
       </span>
     </div>
   );

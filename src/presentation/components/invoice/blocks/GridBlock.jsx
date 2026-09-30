@@ -19,8 +19,9 @@ const LABEL_COLUMN_WIDTH = { docInfo: '85px', default: '90px' };
  * @param {Object}   props.element
  * @param {string[]} props.element.fields Claves de las variables a mostrar.
  * @param {Object}   props.data           Datos de la factura.
+ * @param {boolean}  props.previewMode    Impresión/vista previa: los datos que faltan quedan en blanco.
  */
-export const GridBlock = ({ element, data }) => {
+export const GridBlock = ({ element, data, previewMode }) => {
   const isDocInfo = element.fields?.includes('facturaNo');
 
   return (
@@ -40,7 +41,7 @@ export const GridBlock = ({ element, data }) => {
               {formatFieldLabel(DYNAMICS_VARIABLES_BY_KEY[field]?.label ?? field)}
             </div>
             {/* break-words: los valores largos (p. ej. la dirección) saltan de línea. */}
-            <div className="uppercase break-words">{displayField(data, field)}</div>
+            <div className="uppercase break-words">{displayField(data, field, { showPlaceholder: !previewMode })}</div>
           </Fragment>
         ))}
       </div>

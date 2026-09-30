@@ -18,20 +18,31 @@ const getFieldFormat = (path) => DYNAMICS_VARIABLES_BY_KEY[path]?.format ?? TOTA
 
 /**
  * Texto a mostrar para un campo de la factura.
- * @param {Object} data   InvoiceData.
- * @param {string} path   Ruta del campo.
- * @param {string} [format] Formato forzado; si no, el del catálogo.
+ * @param {Object}  data   InvoiceData.
+ * @param {string}  path   Ruta del campo.
+ * @param {Object}  [options]
+ * @param {string}  [options.format] Formato forzado; si no, el del catálogo.
+ * @param {boolean} [options.showPlaceholder=true] Si el dato falta, mostrar `{{campo}}`
+ *   (útil en el editor). Al imprimir se pasa `false` para dejar el hueco en blanco:
+ *   un marcador `{{telefono}}` nunca debe salir en el papel fiscal.
  * @returns {string}
  */
-export const displayField = (data, path, format = getFieldFormat(path)) => {
+export const displayField = (data, path, { format = getFieldFormat(path), showPlaceholder = true } = {}) => {
   const value = getValueByPath(data, path);
-  return value === undefined || value === null || value === '' ? `{{${path}}}` : formatBoundValue(value, format);
+  if (value === undefined || value === null || value === '') return showPlaceholder ? `{{${path}}}` : '';
+  return formatBoundValue(value, format);
 };
 
 /**
  * Sustituye las `{{variables}}` de un texto con los datos de la factura.
- * @param {string} text
- * @param {Object} data
+ * @param {string}  text
+ * @param {Object}  data
+ * @param {boolean} [showPlaceholder=true] Igual que en `displayField`.
  */
-export const renderText = (text, data) =>
-  interpolateText(text, data, (value, path) => formatBoundValue(value, getFieldFormat(path)));
+export const renderText = (text, data, showPlaceholder = true) =>
+  interpolateText(
+    text,
+    data,
+    (value, path) => formatBoundValue(value, getFieldFormat(path)),
+    showPlaceholder ? undefined : () => '',
+  );
