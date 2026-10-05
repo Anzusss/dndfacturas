@@ -50,7 +50,8 @@ git pull
 ## 3. Instalar dependencias (3–5 min)
 
 ```bash
-npm install                  # frontend
+npm install                  # herramientas de la raíz
+npm run frontend:install     # frontend empresarial
 npm --prefix backend install # backend
 ```
 
@@ -179,12 +180,21 @@ Si todo esto funciona, el entorno está listo.
 ## 9. Antes de ir a producción (no olvidar)
 
 - [ ] **Sustituir la autenticación simulada** (cabeceras `X-User-Email` / `X-User-Role`, que cualquiera
-      puede falsificar) por el inicio de sesión real:
-  - Backend: `resolveUser` en `backend/src/common/auth/mock-auth.guard.ts`.
-  - Frontend: `buildUserHeaders` en `src/services/backend/httpClient.js`, y quitar `RoleSwitcher`.
+      puede falsificar) por el inicio de sesión real. La plantilla empresarial ya monta `AuthProvider` y
+      expone `useAuth()`; falta confirmar con Identity API cómo se obtiene el token y cómo se mapea el usuario
+      a los permisos `DISEÑADOR` / `GERENTE`:
+      - Backend: reemplazar `resolveUser` en `backend/src/common/auth/mock-auth.guard.ts` por validación JWT/sesión.
+      - Frontend: `useAuth()` ya proporciona el usuario; `frontend/src/services/backend/httpClient.js` envía el token
+            real y conserva las cabeceras de compatibilidad solo mientras el backend migra. `RoleSwitcher` y `mockUsers`
+            ya fueron eliminados.
+      - Mapeo general actual: `admin`, `manager`, `gerente` y `superadmin` usan permisos de gerente; `designer`,
+            `operator`, `operador` y `user` usan permisos de diseñador. Identity puede sustituir estas equivalencias
+            cuando entregue el catálogo oficial de roles.
 - [ ] Contraseñas reales de base de datos (no `dndfacturas_dev`) y `CORS_ORIGIN` con el dominio real.
-- [ ] Integrar en la plantilla de la empresa: su router monta `featureRoutes` de `src/routes/appRoutes.jsx`
-      dentro de su `<Outlet/>` (ver README, "Integración en la plantilla de la empresa").
+- [x] Integrar el Canvas en la plantilla empresarial: el router actual monta `canvasRoutes` bajo
+      `/facturacion` y el menú principal enlaza Diseñador, Plantillas, Impresión y Auditoría.
+- [x] Revisar el despliegue: `frontend` es el frontend principal; la copia anterior quedó archivada en
+      `legacy-frontend`. El backend PHP de GP Print Studio vive en `gp-print-studio-backend`.
 
 ---
 
@@ -208,9 +218,11 @@ Si todo esto funciona, el entorno está listo.
 
 | Comando | Qué hace |
 |---|---|
-| `npm run dev` | Frontend sin backend (localStorage) |
-| `npm run dev:backend` | Frontend usando el backend |
+| `npm run dev` | Frontend empresarial sin backend de plantillas (modo local) |
+| `npm run dev:backend` | Frontend empresarial usando NestJS |
+| `npm run frontend:install` | Instala dependencias de `frontend` |
 | `npm run backend:dev` | Backend con recarga automática |
+| `npm run gp-print-studio:up` | Levanta API PHP y bases de GP Print Studio |
 | `npm run mock-api` | "Dynamics" simulado en el puerto 3001 |
 | `npm run db:up` / `db:down` | Levanta / detiene la base de datos (conserva datos) |
 | `npm run db:reset` | Borra la base de datos y la recrea desde los scripts |

@@ -1,0 +1,19 @@
+.agents/
+./backend/backups/
+
+# Credentials and Environment variables
+.env
+.env.*
+!.env.example
+
+# IDEs
+.vscode/
+.idea/
+
+# Dependencies globally
+node_modules/
+vendor/
+
+# OS Files
+.DS_Store
+Thumbs.db

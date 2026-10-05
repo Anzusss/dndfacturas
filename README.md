@@ -17,7 +17,7 @@ Consulta [`roadmap.md`](roadmap.md) para el alcance completo y las fases pendien
 Requisitos: Node 24+ y Docker Desktop abierto.
 
 ```bash
-npm install && npm --prefix backend install   # dependencias (una vez)
+npm install && npm run frontend:install && npm --prefix backend install   # dependencias (una vez)
 npm run db:up                                 # PostgreSQL + Adminer (crea las tablas la 1.ª vez)
 npm run backend:dev                           # API en http://localhost:3000/api (docs: /api/docs)
 npm run mock-api                              # "Dynamics" simulado en http://localhost:3001 (otra terminal)
