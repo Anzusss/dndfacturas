@@ -20,7 +20,7 @@ const initialState: AuthState = {
     id: 'usr_001',
     name: 'John Snow',
     email: 'john.snow@serex.com',
-    role: 'Administrador de Sistema',
+    role: 'GERENTE',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
   },
   token: 'mock-jwt-token-serex-2026',

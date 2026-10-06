@@ -110,6 +110,18 @@ Imprimir:  nº de factura ──▶ API ──▶ plantilla activa de su tipo �
 - El frontend usa la sesión de la plantilla empresarial y sus perfiles generales para aplicar permisos.
 - Importar/exportar: JSON validado; lo importado entra siempre como borrador.
 
+### Rol temporal de desarrollo
+
+Mientras se completa la integración de roles de Identity, el frontend asigna todos los permisos al
+rol `GERENTE`. Esto habilita temporalmente editar, revisar, aprobar, activar, importar/exportar e
+imprimir facturas desde el entorno local.
+
+Para cambiarlo más adelante, edita `frontend/src/presentation/hooks/useCurrentUser.js`: reemplaza
+el `MOCK_ROLE` fijo y restaura el mapeo de `user.role`, `user.roles` o `user.claims.role` recibido
+por Identity. El `authSlice` inicial de `frontend/src/app/store/slices/authSlice.ts` también debe
+reflejar el rol de desarrollo que se quiera mostrar, pero la autorización del Canvas se centraliza
+en `useCurrentUser` y `domain/models/permissions.js`.
+
 ## Tamaños de hoja
 
 Configurables por plantilla (panel izquierdo del editor, sin bloque seleccionado):
@@ -177,7 +189,7 @@ src/
 │   ├── local/                   implementaciones sobre localStorage (modo sin backend)
 │   ├── invoiceApi/              invoiceApiService (backend/API/mock), dynamicsInvoiceMapper, mockInvoices
 │   ├── storage/                 localStorageClient
-│   ├── auth/                    mockUsers (a sustituir por el login real)
+│   ├── auth/                    configuración del login y sesión de Identity
 │   ├── templateWorkflowService  guardar, enviar, aprobar, rechazar, activar, importar, exportar
 │   ├── invoicePrintService      preparar factura + plantilla activa, registrar impresión
 │   ├── templateService / activeTemplateService / templateHistoryService / auditService
