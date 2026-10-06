@@ -25,6 +25,8 @@ dist-ssr
 
 # Variables de entorno con credenciales (usa .env.example como plantilla)
 .env
+.env.*
+!.env.example
 
 # Backups de bases de datos: son archivos grandes y no deben entrar al repositorio
 gp-print-studio-backend/backups/*.bak
