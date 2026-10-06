@@ -7,6 +7,7 @@
  * configure la página de la impresora con esas mismas medidas.
  */
 
+import { forwardRef } from 'react';
 import { DEFAULT_FONT_FAMILY } from '@/domain/constants/paperDimensions';
 import { getPaperDimensions } from '@/domain/constants/paperSizes';
 
@@ -15,11 +16,10 @@ import { getPaperDimensions } from '@/domain/constants/paperSizes';
  * @param {Object} props.pageSetup   Configuración de página de la plantilla.
  * @param {string} [props.id]        Id DOM (el que clona `printInvoice`).
  * @param {string} [props.className] Clases extra.
- * @param {import('react').Ref<HTMLDivElement>} [props.ref] Referencia al nodo (React 19: `ref` es una prop).
  * @param {import('react').ReactNode} props.children
  *   El resto de props (p. ej. handlers de drag & drop) se pasan al div.
  */
-export const InvoiceSheet = ({ pageSetup, id, className = '', ref, children, ...rest }) => {
+export const InvoiceSheet = forwardRef(({ pageSetup, id, className = '', children, ...rest }, ref) => {
   const { widthPx, heightPx, widthMm, heightMm } = getPaperDimensions(pageSetup);
 
   return (
@@ -40,4 +40,4 @@ export const InvoiceSheet = ({ pageSetup, id, className = '', ref, children, ...
       {children}
     </div>
   );
-};
+});
