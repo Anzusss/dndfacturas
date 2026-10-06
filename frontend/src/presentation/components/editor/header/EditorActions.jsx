@@ -1,5 +1,5 @@
 /**
- * @file Bloque derecho de la cabecera: rol simulado, Restaurar,
+ * @file Bloque derecho de la cabecera: Restaurar,
  * Guardar y Probar Impresión.
  * Restaurar y Guardar solo se habilitan para borradores y usuarios con permiso.
  */

@@ -42,7 +42,6 @@ export const PrintDetailsPage = () => {
           icon={Printer}
           title={`Detalle de factura ${invoiceNumber || ''}`}
           description="Datos completos del documento y vista previa con la plantilla activa."
-          showNavigation={false}
           actions={
             <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={() => navigate('/facturacion/print')}>
               <ArrowLeft className="mr-1.5 inline h-3.5 w-3.5" />

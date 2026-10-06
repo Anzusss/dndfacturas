@@ -56,7 +56,6 @@ export const PrintPage = () => {
           icon={Printer}
           title="Imprimir Factura"
           description="Busca una factura de Dynamics y se imprimirá con la plantilla activa de su tipo."
-          showNavigation={false}
         />
 
         <InvoiceLookupForm loading={false} onSearch={openDetails} onLoadJson={openJsonDetails} />

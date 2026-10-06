@@ -18,8 +18,9 @@ Requisitos: Node 24+ y Docker Desktop abierto.
 
 ```bash
 npm install && npm run frontend:install && npm --prefix backend install   # dependencias (una vez)
-npm run db:up                                 # PostgreSQL + Adminer (crea las tablas la 1.ª vez)
+npm run db:up                                 # PostgreSQL del Canvas (crea las tablas la 1.ª vez)
 npm run backend:dev                           # API en http://localhost:3000/api (docs: /api/docs)
+npm run gp-print-studio:up                   # PHP + PostgreSQL GP + SQL Server (Dynamics)
 npm run mock-api                              # "Dynamics" simulado en http://localhost:3001 (otra terminal)
 npm run dev:backend                           # app en http://localhost:5173 guardando en PostgreSQL
 ```
@@ -34,12 +35,13 @@ npm run dev        # app en http://localhost:5173; los datos se guardan en el na
 ### Otros comandos
 
 ```bash
-npm run build          # build de producción del frontend en dist/
-npm run lint           # análisis estático del frontend (oxlint)
+npm run build          # build de producción del frontend en frontend/dist/
+npm run lint           # validación TypeScript del frontend
 npm run backend:test   # tests unitarios + e2e del backend (requiere Docker)
 ```
 
-El backend está documentado en [`backend/README.md`](backend/README.md).
+El backend NestJS está documentado en [`backend/README.md`](backend/README.md). El backend PHP de
+GP Print Studio está documentado en [`docs/GP_PRINT_STUDIO_README.md`](docs/GP_PRINT_STUDIO_README.md).
 
 ## Base de datos (Docker)
 
@@ -50,17 +52,18 @@ cp .env.example .env   # opcional: cambia credenciales/puertos (si no, usa los v
 npm run db:up          # = docker compose up -d
 ```
 
-La primera vez, PostgreSQL ejecuta automáticamente `database/init/01_schema.sql` (tablas, reglas y
-vistas) y `02_seed.sql` (tipos de factura y las dos plantillas por defecto, aprobadas y activas).
+La primera vez, el PostgreSQL de NestJS ejecuta automáticamente `database/init/01_schema.sql`
+(tablas, reglas y vistas) y `02_seed.sql` (tipos de factura y las dos plantillas por defecto,
+aprobadas y activas).
 
 | Servicio | Dirección | Acceso por defecto |
 |---|---|---|
-| PostgreSQL 16 | `localhost:5432` | BD `dndfacturas` · usuario `dndfacturas` · contraseña `dndfacturas_dev` |
-| Adminer (visor web) | http://localhost:8080 | Sistema *PostgreSQL*, servidor `db`, mismas credenciales |
+| PostgreSQL 16 · Canvas/NestJS | `localhost:5432` | BD `dndfacturas` · usuario `dndfacturas` · contraseña de desarrollo |
+| PostgreSQL del Canvas | `localhost:5432` | Usar DBeaver · BD `dndfacturas` · servidor `localhost` |
 
 | Comando | Qué hace |
 |---|---|
-| `npm run db:up` / `db:down` | Levanta / detiene (los datos se conservan en el volumen) |
+| `npm run db:up` / `db:down` | Levanta / detiene PostgreSQL del Canvas (los datos se conservan) |
 | `npm run db:reset` | **Borra los datos** y recrea todo desde los scripts |
 | `npm run db:seed` | Regenera `02_seed.sql` desde el código del dominio (luego `db:reset`) |
 
@@ -74,6 +77,25 @@ borra, solo se activan versiones aprobadas del mismo tipo, y la auditoría es de
 > El frontend usa esta base de datos a través del backend (`npm run dev:backend`). Con
 > `npm run dev` sigue funcionando sin backend, guardando en `localStorage`.
 
+### Base de datos de GP Print Studio y Dynamics
+
+El backend PHP vive en `gp-print-studio-backend/` y usa un segundo stack Docker independiente:
+
+```bash
+npm run gp-print-studio:up
+```
+
+| Servicio | Dirección | Uso |
+|---|---|---|
+| PHP/CodeIgniter | `http://localhost:8080` | API de documentos y formatos |
+| PostgreSQL 15 | `localhost:5433` | `gp_print_studio_db`, tablas `document_formats` y versiones |
+| SQL Server 2019 | `localhost:1433` | Datos de Microsoft Dynamics GP |
+
+La pantalla de impresión consulta las cabeceras y detalles de documentos al backend PHP
+(`http://localhost:8080/api/documents/...`). Las plantillas, aprobaciones y auditoría del Canvas
+se guardan en el PostgreSQL de NestJS. Son dos bases separadas intencionadamente hasta completar
+la consolidación de servicios.
+
 ## Flujo de trabajo
 
 ```
@@ -85,12 +107,12 @@ Imprimir:  nº de factura ──▶ API ──▶ plantilla activa de su tipo �
 - Solo los borradores se editan. Una versión aprobada no cambia nunca: "Crear nueva versión"
   genera la siguiente como borrador y la aprobada sigue imprimiéndose hasta activar la nueva.
 - Cada impresión guarda plantilla **y versión**; el historial registra quién hizo qué y cuándo.
-- El rol se elige con el selector **"Rol (simulado)"** hasta integrar el inicio de sesión de la empresa.
+- El frontend usa la sesión de la plantilla empresarial y sus perfiles generales para aplicar permisos.
 - Importar/exportar: JSON validado; lo importado entra siempre como borrador.
 
 ## Tamaños de hoja
 
-Configurables por plantilla (panel derecho del editor, sin bloque seleccionado):
+Configurables por plantilla (panel izquierdo del editor, sin bloque seleccionado):
 
 | Tamaño | Medidas (vertical) | Uso habitual |
 |---|---|---|
@@ -111,9 +133,9 @@ Configurables por plantilla (panel derecho del editor, sin bloque seleccionado):
    ```
    VITE_INVOICE_API_URL=https://servidor/api/facturas/{numero}
    ```
-   Sin URL, la app usa el **modo simulado** (`src/services/invoiceApi/mockInvoices.js`).
+  Sin URL, la app usa el **modo simulado** (`frontend/src/services/invoiceApi/mockInvoices.js`).
    Reinicia `npm run dev` tras cambiar el archivo.
-2. Ajusta **`src/services/invoiceApi/dynamicsInvoiceMapper.js`**: `DYNAMICS_FIELD_MAP` indica en
+2. Ajusta **`frontend/src/services/invoiceApi/dynamicsInvoiceMapper.js`**: `DYNAMICS_FIELD_MAP` indica en
    qué ruta del JSON de la API está cada dato, e `INVOICE_TYPE_ALIASES` los códigos de crédito/contado.
    Es el único archivo que depende del formato de Dynamics.
 3. Prueba en **Imprimir** (`/print`):
@@ -171,15 +193,15 @@ src/
         ├── print/      búsqueda, comprobaciones, vista previa, inspector de datos
         ├── templates/  plantilla activa por tipo, tarjetas, importar, visor JSON
         ├── audit/      filtros, impresiones, historial de cambios
-        └── common/     SidebarPanel, FormField, NumberField, Toast, PageHeader, RoleSwitcher…
+        └── common/     SidebarPanel, FormField, NumberField, Toast y PageHeader
 ```
 
 ## Integración en la plantilla de la empresa
 
-- `src/routes/appRoutes.jsx` exporta `featureRoutes` para montarlas bajo el layout de la empresa
-  (su `<Outlet/>`); `AppRouter`/`MainLayout` solo se usan en modo independiente.
+- `frontend/src/app/router/canvasRoutes.tsx` monta el Canvas bajo `/facturacion` dentro del layout empresarial.
 - Las alturas ya no dependen de `100vh`, así que el editor se adapta al contenedor.
-- `RoleSwitcher` y `mockUsers` se eliminan al tener el usuario real (`useSessionStore`).
+- La sesión proviene de `@gruposerex/auth-module`; el backend NestJS mantiene compatibilidad temporal
+  con cabeceras mientras se completa la validación JWT.
 
 ## Convenciones
 

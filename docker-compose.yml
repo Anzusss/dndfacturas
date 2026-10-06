@@ -1,7 +1,7 @@
 # =============================================================================
 # dndFacturas · Servicios de base de datos para desarrollo
 #
-#   docker compose up -d        Levanta PostgreSQL y Adminer (crea las tablas la 1.ª vez)
+#   docker compose up -d        Levanta PostgreSQL (crea las tablas la 1.ª vez)
 #   docker compose ps           Estado de los servicios
 #   docker compose logs -f db   Registro de PostgreSQL
 #   docker compose down         Detiene (los datos se conservan)
@@ -39,22 +39,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
-  # ---------------------------------------------------------------------------
-  # Adminer: visor web de la base de datos en http://localhost:8080
-  # Sistema: PostgreSQL · Servidor: db · Usuario/contraseña/BD: los de arriba.
-  # ---------------------------------------------------------------------------
-  adminer:
-    image: adminer:latest
-    container_name: dndfacturas-adminer
-    restart: unless-stopped
-    environment:
-      ADMINER_DEFAULT_SERVER: db
-    ports:
-      - "${ADMINER_PORT:-8080}:8080"
-    depends_on:
-      db:
-        condition: service_healthy
 
 volumes:
   db_data:
