@@ -1,7 +1,7 @@
 # =============================================================================
 # dndFacturas · Servicios de base de datos para desarrollo
 #
-#   docker compose up -d        Levanta PostgreSQL (crea las tablas la 1.ª vez)
+#   docker compose up -d        Levanta PostgreSQL y servicios de prueba
 #   docker compose ps           Estado de los servicios
 #   docker compose logs -f db   Registro de PostgreSQL
 #   docker compose down         Detiene (los datos se conservan)
@@ -15,31 +15,115 @@ name: dndfacturas
 
 services:
   # ---------------------------------------------------------------------------
-  # PostgreSQL: plantillas (JSONB), plantilla activa por tipo y auditoría.
-  # Los scripts de ./database/init se ejecutan en orden alfabético SOLO cuando
-  # el volumen de datos está vacío (primera vez o tras `down -v`).
+  # PostgreSQL único: conserva la base existente de GP y recibe las tablas de
+  # dndfacturas en la misma base lógica `gp_print_studio_db`.
   # ---------------------------------------------------------------------------
-  db:
-    image: postgres:16-alpine
-    container_name: dndfacturas-db
+  postgres:
+    image: postgres:15-alpine
+    container_name: ${PG_CONTAINER_NAME:-gp-print-studio-postgres}
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-dndfacturas}
-      POSTGRES_USER: ${POSTGRES_USER:-dndfacturas}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dndfacturas_dev}
+      POSTGRES_DB: ${PG_DATABASE:-gp_print_studio_db}
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-Actinio*2026}
       TZ: America/Caracas
       PGTZ: America/Caracas
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${PG_PORT:-5432}:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - gp_pg_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - dndfacturas-network
+
+  # En volúmenes existentes, PostgreSQL no vuelve a ejecutar entrypoint-initdb.
+  # Este servicio agrega el esquema de dndfacturas una sola vez, sin tocar GP.
+  dndfacturas-schema:
+    image: postgres:15-alpine
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${PG_USER:-postgres}
+      PGPASSWORD: ${PG_PASSWORD:-Actinio*2026}
+      PGDATABASE: ${PG_DATABASE:-gp_print_studio_db}
+    volumes:
+      - ./database/init:/database-init:ro
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        until pg_isready; do sleep 2; done;
+        if [ "$$(psql -tAc "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'invoice_types');" | tr -d '[:space:]')" != "t" ];
+        then psql -v ON_ERROR_STOP=1 -f /database-init/01_schema.sql && psql -v ON_ERROR_STOP=1 -f /database-init/02_seed.sql;
+        else echo "El esquema dndfacturas ya existe; no se modifica.";
+        fi
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dndfacturas-network
+
+  # ---------------------------------------------------------------------------
+  # GP Print Studio temporal: API PHP, PostgreSQL propio y SQL Server/Dynamics.
+  # ---------------------------------------------------------------------------
+  gp-print-studio:
+    build:
+      context: ./gp-print-studio-backend
+      dockerfile: .docker/Dockerfile
+    container_name: ${APP_CONTAINER_NAME:-gp-print-studio-backend}
+    ports:
+      - "${APP_PORT:-8080}:80"
+    environment:
+      DB_HOSTNAME: postgres
+      DB_USERNAME: ${PG_USER:-postgres}
+      DB_PASSWORD: ${PG_PASSWORD:-Actinio*2026}
+      DB_DATABASE: ${PG_DATABASE:-gp_print_studio_db}
+      DB_DRIVER: Postgre
+      DB_PORT: 5432
+      SQLSRV_HOSTNAME: dynamics-db
+      SQLSRV_USERNAME: ${DB_USER:-sa}
+      SQLSRV_PASSWORD: ${DB_PASSWORD:-Actinio*2026}
+      SQLSRV_DATABASE: ${DB_DATABASE:-PSGMC}
+      SQLSRV_PORT: 1433
+    volumes:
+      - ./gp-print-studio-backend/source:/var/www/html
+      - ./gp-print-studio-backend/.docker/vhost.conf:/etc/apache2/sites-available/000-default.conf
+    networks:
+      - dndfacturas-network
+    depends_on:
+      dndfacturas-schema:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      dynamics-db:
+        condition: service_started
+
+  dynamics-db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: ${DB_CONTAINER_NAME:-gp-print-studio-database}
+    ports:
+      - "${DB_PORT:-1433}:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:-Actinio*2026}
+      MSSQL_PID: Developer
+    volumes:
+      - sql_data:/var/opt/mssql
+      - ./gp-print-studio-backend/backups:/var/opt/mssql/backups
+    networks:
+      - dndfacturas-network
 
 volumes:
-  db_data:
-    name: dndfacturas_db_data
+  sql_data:
+    name: gp-print-studio_sql_data
+  gp_pg_data:
+    name: gp-print-studio_pg_data
+
+networks:
+  dndfacturas-network:
+    driver: bridge

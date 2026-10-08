@@ -12,12 +12,11 @@
     "frontend:install": "npm --prefix frontend install",
     "mock-api": "node mock-api/server.js",
     "db:seed": "node database/scripts/generate-seed.mjs",
-    "db:up": "docker compose up -d",
-    "db:down": "docker compose down",
-    "db:reset": "docker compose down -v && docker compose up -d",
+    "db:up": "docker compose up -d postgres dndfacturas-schema",
+    "db:down": "docker compose stop dndfacturas-schema postgres",
     "backend:dev": "npm --prefix backend run start:dev",
-    "gp-print-studio:up": "docker compose -f gp-print-studio-backend/docker-compose.yml up -d --build",
-    "gp-print-studio:down": "docker compose -f gp-print-studio-backend/docker-compose.yml down",
+    "gp-print-studio:up": "docker compose up -d --build gp-print-studio",
+    "gp-print-studio:down": "docker compose stop gp-print-studio dynamics-db dndfacturas-schema postgres",
     "backend:test": "npm --prefix backend test && npm --prefix backend run test:e2e"
   },
   "dependencies": {

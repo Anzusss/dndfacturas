@@ -18,7 +18,7 @@ Requisitos: Node 24+ y Docker Desktop abierto.
 
 ```bash
 npm install && npm run frontend:install && npm --prefix backend install   # dependencias (una vez)
-npm run db:up                                 # PostgreSQL del Canvas (crea las tablas la 1.ª vez)
+npm run db:up                                 # PostgreSQL único + esquema dndfacturas
 npm run backend:dev                           # API en http://localhost:3000/api (docs: /api/docs)
 npm run gp-print-studio:up                   # PHP + PostgreSQL GP + SQL Server (Dynamics)
 npm run mock-api                              # "Dynamics" simulado en http://localhost:3001 (otra terminal)
@@ -64,8 +64,7 @@ aprobadas y activas).
 | Comando | Qué hace |
 |---|---|
 | `npm run db:up` / `db:down` | Levanta / detiene PostgreSQL del Canvas (los datos se conservan) |
-| `npm run db:reset` | **Borra los datos** y recrea todo desde los scripts |
-| `npm run db:seed` | Regenera `02_seed.sql` desde el código del dominio (luego `db:reset`) |
+| `npm run db:seed` | Regenera `02_seed.sql` desde el código del dominio |
 
 Tablas: `invoice_types`, `invoice_templates` (una fila por versión, diseño en JSONB),
 `active_templates` (una activa por tipo), `template_history` y `print_logs` (auditoría).
@@ -79,7 +78,8 @@ borra, solo se activan versiones aprobadas del mismo tipo, y la auditoría es de
 
 ### Base de datos de GP Print Studio y Dynamics
 
-El backend PHP vive en `gp-print-studio-backend/` y usa un segundo stack Docker independiente:
+El backend PHP vive en `gp-print-studio-backend/`, pero sus servicios se
+levantan desde el Compose raíz para compartir red y ciclo de vida:
 
 ```bash
 npm run gp-print-studio:up
@@ -88,13 +88,13 @@ npm run gp-print-studio:up
 | Servicio | Dirección | Uso |
 |---|---|---|
 | PHP/CodeIgniter | `http://localhost:8080` | API de documentos y formatos |
-| PostgreSQL 15 | `localhost:5433` | `gp_print_studio_db`, tablas `document_formats` y versiones |
+| PostgreSQL 15 | `localhost:5432` | `gp_print_studio_db`, datos GP y tablas dndfacturas |
 | SQL Server 2019 | `localhost:1433` | Datos de Microsoft Dynamics GP |
 
 La pantalla de impresión consulta las cabeceras y detalles de documentos al backend PHP
-(`http://localhost:8080/api/documents/...`). Las plantillas, aprobaciones y auditoría del Canvas
-se guardan en el PostgreSQL de NestJS. Son dos bases separadas intencionadamente hasta completar
-la consolidación de servicios.
+(`http://localhost:8080/api/documents/...`). PostgreSQL es un único contenedor y una
+única base lógica (`gp_print_studio_db`); allí se conservan los datos de GP y se
+agregan las tablas de plantillas y auditoría de dndfacturas.
 
 ## Flujo de trabajo
 
