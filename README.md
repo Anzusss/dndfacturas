@@ -165,7 +165,7 @@ Las dependencias solo apuntan hacia abajo: una capa puede importar de las inferi
 ```
 presentation/   ← Componentes React, páginas, layouts y hooks de UI
      │
-store/          ← Estado global (editor y sesión simulada) con Zustand
+store/          ← Estado global del editor con Zustand
      │
 services/       ← Casos de uso (flujo, impresión) y acceso a datos (localStorage / API)
      │
@@ -184,18 +184,17 @@ src/
 ├── services/                    Cada servicio elige implementación: backend (VITE_BACKEND_URL) o local
 │   ├── backend/                 httpClient + implementaciones contra la API NestJS
 │   ├── local/                   implementaciones sobre localStorage (modo sin backend)
-│   ├── invoiceApi/              invoiceApiService (backend/API/mock), dynamicsInvoiceMapper, mockInvoices
+│   ├── invoiceApi/              invoiceApiService (backend/API/mock), dynamicsInvoiceMapper, mockInvoices, documentSummaryService
 │   ├── storage/                 localStorageClient
-│   ├── auth/                    configuración del login y sesión de Identity
 │   ├── templateWorkflowService  guardar, enviar, aprobar, rechazar, activar, importar, exportar
 │   ├── invoicePrintService      preparar factura + plantilla activa, registrar impresión
 │   ├── templateService / activeTemplateService / templateHistoryService / auditService
-├── store/           useEditorStore, editorSelectors, useSessionStore
+├── store/           useEditorStore, editorSelectors
 ├── utils/           units, formatters, snapUtils, printUtils, fileUtils
 ├── routes/          appRoutes (páginas reutilizables), AppRouter, routePaths
 └── presentation/
     ├── hooks/       useCurrentUser, useInvoicePrint, useTemplateManagement, useEditorTestPrint, useToast
-    ├── pages/       EditorPage, PrintPage, TemplatesPage, AuditPage, NotFoundPage
+    ├── pages/       EditorPage, PrintPage, PrintDetailsPage, TemplatesPage, AuditPage, NotFoundPage
     └── components/
         ├── invoice/    InvoiceSheet, InvoiceDocument y bloques (comunes a editor e impresión)
         ├── editor/     cabecera, toolbox, lienzo (react-rnd) y paneles de propiedades
